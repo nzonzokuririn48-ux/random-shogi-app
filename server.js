@@ -214,11 +214,6 @@ function mustPromote(type, side, toRow) {
   return false;
 }
 
-function pieceDisplay(piece) {
-  if (!piece) return "";
-  return PIECE_LABELS[piece.type] || piece.type;
-}
-
 function getPseudoMoves(board, r, c) {
   const piece = board[r][c];
   if (!piece) return [];
@@ -254,20 +249,20 @@ function getPseudoMoves(board, r, c) {
 
   switch (piece.type) {
     case "K":
-      [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc])=>pushStep(dr,dc));
+      [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc]) => pushStep(dr,dc));
       break;
     case "G":
     case "PS":
     case "PN":
     case "PL":
     case "PP":
-      [[d,-1],[d,0],[d,1],[0,-1],[0,1],[-d,0]].forEach(([dr,dc])=>pushStep(dr,dc));
+      [[d,-1],[d,0],[d,1],[0,-1],[0,1],[-d,0]].forEach(([dr,dc]) => pushStep(dr,dc));
       break;
     case "S":
-      [[d,-1],[d,0],[d,1],[-d,-1],[-d,1]].forEach(([dr,dc])=>pushStep(dr,dc));
+      [[d,-1],[d,0],[d,1],[-d,-1],[-d,1]].forEach(([dr,dc]) => pushStep(dr,dc));
       break;
     case "N":
-      [[2*d,-1],[2*d,1]].forEach(([dr,dc])=>pushStep(dr,dc));
+      [[2*d,-1],[2*d,1]].forEach(([dr,dc]) => pushStep(dr,dc));
       break;
     case "L":
       pushSlide(d,0);
@@ -276,18 +271,18 @@ function getPseudoMoves(board, r, c) {
       pushStep(d,0);
       break;
     case "R":
-      [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>pushSlide(dr,dc));
+      [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc]) => pushSlide(dr,dc));
       break;
     case "B":
-      [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc])=>pushSlide(dr,dc));
+      [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc]) => pushSlide(dr,dc));
       break;
     case "PR":
-      [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>pushSlide(dr,dc));
-      [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc])=>pushStep(dr,dc));
+      [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc]) => pushSlide(dr,dc));
+      [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc]) => pushStep(dr,dc));
       break;
     case "PB":
-      [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc])=>pushSlide(dr,dc));
-      [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>pushStep(dr,dc));
+      [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc]) => pushSlide(dr,dc));
+      [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc]) => pushStep(dr,dc));
       break;
   }
 
@@ -314,10 +309,8 @@ function isCheck(board, side) {
     for (let c = 0; c < 9; c++) {
       const p = board[r][c];
       if (!p || p.owner !== opponent(side)) continue;
-      const pseudo = getPseudoMoves(board, r, c);
-      if (pseudo.some(m => m.r === king.r && m.c === king.c)) {
-        return true;
-      }
+      const moves = getPseudoMoves(board, r, c);
+      if (moves.some(m => m.r === king.r && m.c === king.c)) return true;
     }
   }
   return false;
@@ -614,6 +607,7 @@ app.get("/api/ranking", (req, res) => {
   res.json(ranking);
 });
 
-server.listen(3001, () => {
-  console.log("server running on http://localhost:3001");
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`server running on port ${PORT}`);
 });

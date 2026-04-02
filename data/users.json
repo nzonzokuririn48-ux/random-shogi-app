@@ -1,0 +1,34 @@
+{
+  "い": {
+    "name": "い",
+    "rating": 1484,
+    "games": 1,
+    "wins": 0,
+    "losses": 1,
+    "draws": 0
+  },
+  "あ": {
+    "name": "あ",
+    "rating": 1516,
+    "games": 1,
+    "wins": 1,
+    "losses": 0,
+    "draws": 0
+  },
+  "ｗ": {
+    "name": "ｗ",
+    "rating": 1500,
+    "games": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0
+  },
+  "え": {
+    "name": "え",
+    "rating": 1500,
+    "games": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0
+  }
+}

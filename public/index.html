@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ランダム将棋</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+      color: white;
+      text-align: center;
+    }
+
+    #container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+      gap: 14px;
+    }
+
+    #topbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    input {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: none;
+      min-width: 220px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 10px;
+      background: #374151;
+      color: white;
+      font-size: 15px;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    button:hover {
+      background: #4b5563;
+    }
+
+    .panel {
+      width: min(100%, 680px);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    }
+
+    .player {
+      font-size: 18px;
+      font-weight: bold;
+      min-height: 28px;
+    }
+
+    .sub {
+      font-size: 14px;
+      color: #d1d5db;
+      margin-top: 4px;
+    }
+
+    .turn {
+      color: #22d3ee;
+      font-weight: bold;
+    }
+
+    #status {
+      min-height: 24px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fbbf24;
+    }
+
+    #boardWrap {
+      padding: 10px;
+      background: #7c4a14;
+      border-radius: 16px;
+      box-shadow: 0 16px 32px rgba(0,0,0,0.35);
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(9, 56px);
+      grid-template-rows: repeat(9, 56px);
+      gap: 1px;
+      background: #4b2e12;
+      padding: 2px;
+      border-radius: 8px;
+    }
+
+    .cell {
+      width: 56px;
+      height: 56px;
+      background: #deb76f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .cell.selected {
+      background: #fde047;
+    }
+
+    .cell.legal::after {
+      content: "";
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(34,197,94,0.95);
+      position: absolute;
+    }
+
+    .piece {
+      width: 82%;
+      height: 82%;
+      background: #f6dd9b;
+      border: 1.5px solid #7c4a14;
+      clip-path: polygon(50% 0%, 100% 28%, 88% 100%, 12% 100%, 0% 28%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #111827;
+      font-weight: bold;
+      font-size: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    }
+
+    .piece.white {
+      transform: rotate(180deg);
+    }
+
+    .piece.promoted {
+      color: #c2410c;
+    }
+
+    .hands {
+      display: grid;
+      gap: 10px;
+      width: min(100%, 680px);
+    }
+
+    .handBox {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    .handTitle {
+      font-size: 14px;
+      color: #e5e7eb;
+      margin-bottom: 8px;
+    }
+
+    .handRow {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+    }
+
+    .handPiece {
+      background: white;
+      color: #111827;
+      border: 1px solid #9ca3af;
+      border-radius: 10px;
+      padding: 6px 10px;
+      cursor: pointer;
+      min-width: 48px;
+      font-weight: bold;
+    }
+
+    .handPiece.selected {
+      background: #fde047;
+      border-color: #d97706;
+    }
+
+    #infoGrid {
+      display: grid;
+      gap: 8px;
+      width: min(100%, 680px);
+    }
+
+    .infoCard {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    #ranking {
+      width: min(100%, 680px);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 12px;
+      text-align: left;
+    }
+
+    #ranking h3 {
+      margin-top: 0;
+      text-align: center;
+    }
+
+    .rankRow {
+      display: grid;
+      grid-template-columns: 40px 1fr 80px 70px;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    #promoBar {
+      display: none;
+      justify-content: center;
+      gap: 10px;
+      width: min(100%, 680px);
+    }
+
+    @media (max-width: 700px) {
+      #board {
+        grid-template-columns: repeat(9, 38px);
+        grid-template-rows: repeat(9, 38px);
+      }
+
+      .cell {
+        width: 38px;
+        height: 38px;
+      }
+
+      .piece {
+        font-size: 15px;
+      }
+
+      .rankRow {
+        grid-template-columns: 32px 1fr 70px 56px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="topbar">
+      <input id="name" placeholder="名前を入力">
+      <button onclick="connect()">接続</button>
+      <button onclick="resign()">投了</button>
+      <button onclick="loadRanking()">ランキング更新</button>
+    </div>
+
+    <div id="status">未接続</div>
+
+    <div class="panel">
+      <div id="opponent" class="player">相手: -</div>
+      <div id="opponentSub" class="sub">レート: -</div>
+    </div>
+
+    <div class="hands">
+      <div class="handBox">
+        <div class="handTitle">後手の持ち駒</div>
+        <div id="whiteHand" class="handRow"></div>
+      </div>
+    </div>
+
+    <div id="boardWrap">
+      <div id="board"></div>
+    </div>
+
+    <div class="hands">
+      <div class="handBox">
+        <div class="handTitle">先手の持ち駒</div>
+        <div id="blackHand" class="handRow"></div>
+      </div>
+    </div>
+
+    <div id="promoBar">
+      <button onclick="choosePromotion(true)">成る</button>
+      <button onclick="choosePromotion(false)">成らない</button>
+    </div>
+
+    <div id="infoGrid">
+      <div class="infoCard">
+        <div id="me" class="player">自分: -</div>
+        <div id="meSub" class="sub">レート: -</div>
+      </div>
+      <div class="infoCard">
+        <div id="turnInfo" class="player">手番: -</div>
+      </div>
+    </div>
+
+    <div id="ranking">
+      <h3>ランキング</h3>
+      <div id="rankingBody">読み込み中...</div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let socket = null;
+    let board = [];
+    let hands = null;
+    let selected = null;
+    let mySide = null;
+    let currentTurn = null;
+    let myName = "";
+    let opponentName = "";
+    let players = null;
+    let gameEnded = false;
+    let pendingPromotion = null;
+
+    const HAND_ORDER = ["R", "B", "G", "S", "N", "L", "P"];
+
+    const PIECE_LABELS = {
+      K: "玉",
+      R: "飛",
+      B: "角",
+      G: "金",
+      S: "銀",
+      N: "桂",
+      L: "香",
+      P: "歩",
+      PR: "龍",
+      PB: "馬",
+      PS: "全",
+      PN: "圭",
+      PL: "杏",
+      PP: "と"
+    };
+
+    function inBounds(r, c) {
+      return r >= 0 && r < 9 && c >= 0 && c < 9;
+    }
+
+    function clone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function opponent(side) {
+      return side === "black" ? "white" : "black";
+    }
+
+    function dir(side) {
+      return side === "black" ? -1 : 1;
+    }
+
+    function canPromote(type) {
+      return ["R", "B", "S", "N", "L", "P"].includes(type);
+    }
+
+    function promotedType(type) {
+      return {
+        R: "PR",
+        B: "PB",
+        S: "PS",
+        N: "PN",
+        L: "PL",
+        P: "PP"
+      }[type] || type;
+    }
+
+    function baseType(type) {
+      return {
+        PR: "R",
+        PB: "B",
+        PS: "S",
+        PN: "N",
+        PL: "L",
+        PP: "P"
+      }[type] || type;
+    }
+
+    function promotionZone(side, row) {
+      return side === "black" ? row <= 2 : row >= 6;
+    }
+
+    function mustPromote(type, side, toRow) {
+      const t = baseType(type);
+      if (t === "P" || t === "L") {
+        return (side === "black" && toRow === 0) || (side === "white" && toRow === 8);
+      }
+      if (t === "N") {
+        return (side === "black" && toRow <= 1) || (side === "white" && toRow >= 7);
+      }
+      return false;
+    }
+
+    function pieceDisplay(piece) {
+      if (!piece) return "";
+      return PIECE_LABELS[piece.type] || piece.type;
+    }
+
+    function getPseudoMoves(r, c) {
+      const piece = board[r][c];
+      if (!piece) return [];
+      const side = piece.owner;
+      const d = dir(side);
+      const moves = [];
+
+      function pushStep(dr, dc) {
+        const nr = r + dr;
+        const nc = c + dc;
+        if (!inBounds(nr, nc)) return;
+        const target = board[nr][nc];
+        if (!target || target.owner !== side) {
+          moves.push({ r: nr, c: nc });
+        }
+      }
+
+      function pushSlide(dr, dc) {
+        let nr = r + dr;
+        let nc = c + dc;
+        while (inBounds(nr, nc)) {
+          const target = board[nr][nc];
+          if (!target) {
+            moves.push({ r: nr, c: nc });
+          } else {
+            if (target.owner !== side) moves.push({ r: nr, c: nc });
+            break;
+          }
+          nr += dr;
+          nc += dc;
+        }
+      }
+
+      switch (piece.type) {
+        case "K":
+          [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc]) => pushStep(dr,dc));
+          break;
+        case "G":
+        case "PS":
+        case "PN":
+        case "PL":
+        case "PP":
+          [[d,-1],[d,0],[d,1],[0,-1],[0,1],[-d,0]].forEach(([dr,dc]) => pushStep(dr,dc));
+          break;
+        case "S":
+          [[d,-1],[d,0],[d,1],[-d,-1],[-d,1]].forEach(([dr,dc]) => pushStep(dr,dc));
+          break;
+        case "N":
+          [[2*d,-1],[2*d,1]].forEach(([dr,dc]) => pushStep(dr,dc));
+          break;
+        case "L":
+          pushSlide(d,0);
+          break;
+        case "P":
+          pushStep(d,0);
+          break;
+        case "R":
+          [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc]) => pushSlide(dr,dc));
+          break;
+        case "B":
+          [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc]) => pushSlide(dr,dc));
+          break;
+        case "PR":
+          [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc]) => pushSlide(dr,dc));
+          [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc]) => pushStep(dr,dc));
+          break;
+        case "PB":
+          [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc]) => pushSlide(dr,dc));
+          [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc]) => pushStep(dr,dc));
+          break;
+      }
+
+      return moves;
+    }
+
+    function getPseudoMovesOnBoard(customBoard, r, c) {
+      const save = board;
+      board = customBoard;
+      const result = getPseudoMoves(r, c);
+      board = save;
+      return result;
+    }
+
+    function findKing(side, customBoard = board) {
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          const p = customBoard[r][c];
+          if (p && p.owner === side && p.type === "K") return { r, c };
+        }
+      }
+      return null;
+    }
+
+    function isCheck(side, customBoard = board) {
+      const king = findKing(side, customBoard);
+      if (!king) return true;
+
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          const p = customBoard[r][c];
+          if (!p || p.owner !== opponent(side)) continue;
+          const moves = getPseudoMovesOnBoard(customBoard, r, c);
+          if (moves.some(m => m.r === king.r && m.c === king.c)) return true;
+        }
+      }
+      return false;
+    }
+
+    function applyMoveLocal(customBoard, customHands, from, to, promoteFlag) {
+      const nextBoard = clone(customBoard);
+      const nextHands = clone(customHands);
+      const piece = nextBoard[from.r][from.c];
+      if (!piece) return null;
+
+      const target = nextBoard[to.r][to.c];
+      if (target) {
+        const captured = baseType(target.type);
+        if (captured !== "K") {
+          nextHands[piece.owner][captured] += 1;
+        }
+      }
+
+      nextBoard[from.r][from.c] = null;
+      nextBoard[to.r][to.c] = {
+        type: promoteFlag ? promotedType(piece.type) : piece.type,
+        owner: piece.owner
+      };
+
+      return { board: nextBoard, hands: nextHands };
+    }
+
+    function legalBoardMoves(r, c) {
+      const piece = board[r][c];
+      if (!piece) return [];
+
+      const pseudo = getPseudoMoves(r, c);
+      const legal = [];
+
+      for (const move of pseudo) {
+        const must = mustPromote(piece.type, piece.owner, move.r);
+        const can =
+          canPromote(piece.type) &&
+          !["PR","PB","PS","PN","PL","PP"].includes(piece.type) &&
+          (promotionZone(piece.owner, r) || promotionZone(piece.owner, move.r));
+
+        const choices = must ? [true] : can ? [false, true] : [false];
+
+        for (const promoteFlag of choices) {
+          const applied = applyMoveLocal(board, hands, { r, c }, move, promoteFlag);
+          if (!applied) continue;
+          if (!isCheck(piece.owner, applied.board)) {
+            legal.push({
+              from: { r, c },
+              to: move,
+              promote: promoteFlag
+            });
+          }
+        }
+      }
+
+      return legal;
+    }
+
+    function hasPawnInFile(side, col) {
+      for (let r = 0; r < 9; r++) {
+        const p = board[r][col];
+        if (p && p.owner === side && p.type === "P") return true;
+      }
+      return false;
+    }
+
+    function legalDrops(side, type) {
+      const moves = [];
+      if (!hands || hands[side][type] <= 0) return moves;
+
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (board[r][c]) continue;
+
+          if (type === "P") {
+            if ((side === "black" && r === 0) || (side === "white" && r === 8)) continue;
+            if (hasPawnInFile(side, c)) continue;
+          }
+          if (type === "L") {
+            if ((side === "black" && r === 0) || (side === "white" && r === 8)) continue;
+          }
+          if (type === "N") {
+            if ((side === "black" && r <= 1) || (side === "white" && r >= 7)) continue;
+          }
+
+          const nextBoard = clone(board);
+          const nextHands = clone(hands);
+          nextBoard[r][c] = { type, owner: side };
+          nextHands[side][type] -= 1;
+
+          if (!isCheck(side, nextBoard)) {
+            moves.push({ to: { r, c }, piece: type });
+          }
+        }
+      }
+
+      return moves;
+    }
+
+    function connect() {
+      const name = document.getElementById("name").value.trim();
+      if (!name) {
+        alert("名前を入れてください");
+        return;
+      }
+
+      myName = name;
+
+      if (socket) socket.disconnect();
+      socket = io();
+
+      socket.on("connect", () => {
+        socket.emit("join", name);
+      });
+
+      socket.on("waiting", () => {
+        document.getElementById("status").textContent = "マッチング待機中...";
+      });
+
+      socket.on("start", (data) => {
+        mySide = data.side;
+        selected = null;
+        pendingPromotion = null;
+        gameEnded = false;
+        hidePromotionBar();
+        document.getElementById("status").textContent =
+          `対戦開始 / あなたは ${mySide === "black" ? "先手" : "後手"}`;
+      });
+
+      socket.on("state", (data) => {
+        board = data.board;
+        hands = data.hands;
+        currentTurn = data.turn;
+        players = data.players;
+        selected = null;
+        pendingPromotion = null;
+        hidePromotionBar();
+        render();
+      });
+
+      socket.on("gameOver", (data) => {
+        gameEnded = true;
+        hidePromotionBar();
+
+        const myRating = mySide === "black" ? data.ratings.black : data.ratings.white;
+        let msg = "";
+        if (data.reason === "checkmate") {
+          msg = data.winner === mySide ? "あなたの勝ち（詰み）" : "あなたの負け（詰み）";
+        } else {
+          msg = data.winner === mySide ? "あなたの勝ち（投了）" : "あなたの負け（投了）";
+        }
+
+        document.getElementById("status").textContent = `${msg} / 新レート: ${myRating}`;
+        loadRanking();
+        render();
+      });
+
+      socket.on("opponentLeft", () => {
+        document.getElementById("status").textContent = "相手が退出しました";
+      });
+
+      loadRanking();
+    }
+
+    function resign() {
+      if (!socket || gameEnded) return;
+      socket.emit("resign");
+    }
+
+    function showPromotionBar(from, to, candidates) {
+      pendingPromotion = { from, to, candidates };
+      document.getElementById("promoBar").style.display = "flex";
+    }
+
+    function hidePromotionBar() {
+      pendingPromotion = null;
+      document.getElementById("promoBar").style.display = "none";
+    }
+
+    function choosePromotion(flag) {
+      if (!pendingPromotion) return;
+      const found = pendingPromotion.candidates.find(x => x.promote === flag);
+      if (!found) return;
+
+      socket.emit("move", {
+        kind: "move",
+        from: pendingPromotion.from,
+        to: pendingPromotion.to,
+        promote: found.promote
+      });
+
+      selected = null;
+      hidePromotionBar();
+      render();
+    }
+
+    function handleCellClick(r, c) {
+      if (!socket || !board.length || !hands) return;
+      if (gameEnded) return;
+      if (currentTurn !== mySide) return;
+
+      const clicked = board[r][c];
+
+      if (selected && selected.kind === "board") {
+        const legal = legalBoardMoves(selected.r, selected.c);
+        const candidates = legal.filter(m => m.to.r === r && m.to.c === c);
+
+        if (candidates.length === 0) {
+          hidePromotionBar();
+          if (clicked && clicked.owner === mySide) {
+            selected = { kind: "board", r, c };
+            render();
+          } else {
+            selected = null;
+            render();
+          }
+          return;
+        }
+
+        if (candidates.length === 2) {
+          showPromotionBar({ r: selected.r, c: selected.c }, { r, c }, candidates);
+          return;
+        }
+
+        socket.emit("move", {
+          kind: "move",
+          from: { r: selected.r, c: selected.c },
+          to: { r, c },
+          promote: candidates[0].promote
+        });
+
+        selected = null;
+        hidePromotionBar();
+        render();
+        return;
+      }
+
+      if (selected && selected.kind === "hand") {
+        const legal = legalDrops(mySide, selected.piece);
+        const found = legal.find(m => m.to.r === r && m.to.c === c);
+        if (!found) {
+          selected = null;
+          render();
+          return;
+        }
+
+        socket.emit("move", {
+          kind: "drop",
+          piece: selected.piece,
+          to: { r, c }
+        });
+
+        selected = null;
+        render();
+        return;
+      }
+
+      if (clicked && clicked.owner === mySide) {
+        hidePromotionBar();
+        selected = { kind: "board", r, c };
+        render();
+      }
+    }
+
+    function handleHandClick(side, piece) {
+      if (gameEnded) return;
+      if (currentTurn !== mySide) return;
+      if (side !== mySide) return;
+      if (!hands || hands[side][piece] <= 0) return;
+
+      hidePromotionBar();
+      selected = { kind: "hand", piece };
+      render();
+    }
+
+    function renderHands() {
+      const blackHand = document.getElementById("blackHand");
+      const whiteHand = document.getElementById("whiteHand");
+      blackHand.innerHTML = "";
+      whiteHand.innerHTML = "";
+
+      if (!hands) return;
+
+      for (const side of ["white", "black"]) {
+        const target = side === "black" ? blackHand : whiteHand;
+        for (const p of HAND_ORDER) {
+          const count = hands[side][p];
+          if (count <= 0) continue;
+
+          const div = document.createElement("div");
+          div.className = "handPiece";
+          if (selected && selected.kind === "hand" && selected.piece === p && side === mySide) {
+            div.classList.add("selected");
+          }
+          div.textContent = `${PIECE_LABELS[p]}×${count}`;
+          div.onclick = () => handleHandClick(side, p);
+          target.appendChild(div);
+        }
+      }
+    }
+
+    function render() {
+      const el = document.getElementById("board");
+      el.innerHTML = "";
+
+      let legalMap = [];
+      if (selected && selected.kind === "board") {
+        legalMap = legalBoardMoves(selected.r, selected.c);
+      }
+      if (selected && selected.kind === "hand") {
+        legalMap = legalDrops(mySide, selected.piece);
+      }
+
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          const div = document.createElement("div");
+          div.className = "cell";
+
+          if (selected && selected.kind === "board" && selected.r === r && selected.c === c) {
+            div.classList.add("selected");
+          }
+          if (legalMap.some(m => m.to.r === r && m.to.c === c)) {
+            div.classList.add("legal");
+          }
+
+          const p = board[r][c];
+          if (p) {
+            const pieceDiv = document.createElement("div");
+            pieceDiv.className = "piece";
+            if (p.owner === "white") pieceDiv.classList.add("white");
+            if (["PR","PB","PS","PN","PL","PP"].includes(p.type)) pieceDiv.classList.add("promoted");
+            pieceDiv.textContent = pieceDisplay(p);
+            div.appendChild(pieceDiv);
+          }
+
+          div.onclick = () => handleCellClick(r, c);
+          el.appendChild(div);
+        }
+      }
+
+      renderHands();
+      renderInfo();
+    }
+
+    function renderInfo() {
+      const myRating = mySide && players ? players[mySide].rating : "-";
+      const opSide = mySide ? opponent(mySide) : null;
+      const opName = opSide && players ? players[opSide].name : "-";
+      const opRating = opSide && players ? players[opSide].rating : "-";
+
+      document.getElementById("me").innerHTML =
+        `自分: ${myName} ${currentTurn === mySide ? "<span class='turn'>●</span>" : ""}`;
+      document.getElementById("meSub").textContent = `レート: ${myRating}`;
+
+      document.getElementById("opponent").innerHTML =
+        `相手: ${opName} ${currentTurn && opSide === currentTurn ? "<span class='turn'>●</span>" : ""}`;
+      document.getElementById("opponentSub").textContent = `レート: ${opRating}`;
+
+      document.getElementById("turnInfo").textContent =
+        `手番: ${currentTurn === "black" ? "先手" : currentTurn === "white" ? "後手" : "-"}`;
+    }
+
+    async function loadRanking() {
+      try {
+        const res = await fetch("/api/ranking");
+        const data = await res.json();
+        const body = data.slice(0, 20).map((u, i) => {
+          return `
+            <div class="rankRow">
+              <div>${i + 1}</div>
+              <div>${u.name}</div>
+              <div>${u.rating}</div>
+              <div>${u.games}局</div>
+            </div>
+          `;
+        }).join("");
+        document.getElementById("rankingBody").innerHTML = body || "まだデータなし";
+      } catch {
+        document.getElementById("rankingBody").textContent = "ランキング取得失敗";
+      }
+    }
+
+    loadRanking();
+  </script>
+</body>
+</html>

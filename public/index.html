@@ -6,41 +6,54 @@
   <title>ランダム将棋</title>
   <style>
     :root {
-      --bg1: #111827;
-      --bg2: #1f2937;
+      --bg1: #0f172a;
+      --bg2: #1e293b;
       --panel: rgba(255,255,255,0.08);
-      --panel-border: rgba(255,255,255,0.14);
+      --panel-border: rgba(255,255,255,0.12);
       --text: #f8fafc;
       --sub: #cbd5e1;
-      --accent: #22c55e;
-      --warn: #f59e0b;
-      --cell-size: min(10.25vw, 58px);
-      --piece-bg: #f4ddb0;
-      --piece-border: #8a5a24;
-      --board-light: #d6a85d;
-      --board-dark: #c89247;
-      --lift-scale: 1.12;
-      --selected-scale: 1.09;
-      --snap-px: 18;
+
+      --cell-size: min(10.2vw, 58px);
+
+      --board-frame-1: #6b3f13;
+      --board-frame-2: #8a5720;
+      --board-line: rgba(67, 35, 8, 0.92);
+
+      --board-cell-1: #ddb36a;
+      --board-cell-2: #c98e42;
+
+      --piece-bg-1: #f8e9bf;
+      --piece-bg-2: #efd59a;
+      --piece-border: #8a5623;
+
+      --selected-cell-1: #fde68a;
+      --selected-cell-2: #facc15;
+
+      --legal-green: rgba(34,197,94,0.95);
+      --promoted-red: #c2410c;
+      --turn-cyan: #22d3ee;
     }
 
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
+      user-select: none;
     }
 
     html, body {
       margin: 0;
       padding: 0;
       min-height: 100%;
-      background: linear-gradient(180deg, var(--bg2) 0%, var(--bg1) 100%);
       color: var(--text);
       font-family: sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,0.06), transparent 40%),
+        linear-gradient(180deg, var(--bg2) 0%, var(--bg1) 100%);
     }
 
     .page {
-      max-width: 1120px;
+      max-width: 1180px;
       margin: 0 auto;
       padding: 10px;
     }
@@ -54,39 +67,44 @@
     }
 
     input, button {
+      font-size: 16px;
       border: none;
       border-radius: 12px;
-      font-size: 16px;
       padding: 10px 14px;
     }
 
     input {
-      min-width: min(70vw, 260px);
-      background: #fff;
+      min-width: min(72vw, 260px);
+      background: white;
       color: #111827;
     }
 
     button {
-      background: #374151;
+      background: #334155;
       color: white;
       cursor: pointer;
+      transition: transform 0.08s ease, background 0.12s ease;
     }
 
     button:hover {
-      background: #4b5563;
+      background: #475569;
+    }
+
+    button:active {
+      transform: translateY(1px);
     }
 
     .statusBar {
-      text-align: center;
       min-height: 24px;
+      text-align: center;
+      color: #fbbf24;
       font-weight: bold;
-      color: var(--warn);
       margin-bottom: 10px;
     }
 
     .layout {
       display: grid;
-      grid-template-columns: 1fr minmax(300px, 640px) 1fr;
+      grid-template-columns: 1fr minmax(300px, 650px) 1fr;
       gap: 14px;
       align-items: start;
     }
@@ -94,9 +112,10 @@
     .panel {
       background: var(--panel);
       border: 1px solid var(--panel-border);
-      border-radius: 16px;
-      padding: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+      backdrop-filter: blur(6px);
     }
 
     .panel h3 {
@@ -107,15 +126,15 @@
 
     .infoLine {
       font-size: 14px;
-      margin: 6px 0;
-      text-align: center;
       color: var(--sub);
+      text-align: center;
+      margin: 7px 0;
     }
 
     .turnDot {
-      color: #22d3ee;
-      font-weight: bold;
+      color: var(--turn-cyan);
       margin-left: 4px;
+      font-weight: bold;
     }
 
     .centerCol {
@@ -134,51 +153,47 @@
 
     .handTitle {
       text-align: center;
-      font-size: 14px;
       color: var(--sub);
+      font-size: 14px;
       margin-bottom: 8px;
     }
 
     .handRow {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
       justify-content: center;
+      gap: 8px;
       min-height: 46px;
     }
 
     .handPiece {
       min-width: 50px;
-      padding: 6px 10px;
-      border-radius: 10px;
-      background: #fff;
+      background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
       color: #111827;
       border: 1px solid #94a3b8;
-      cursor: pointer;
+      border-radius: 10px;
+      padding: 6px 10px;
       font-weight: bold;
-      user-select: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      position: relative;
+      cursor: pointer;
       transform: scale(1);
-      transition: transform 90ms ease, background 90ms ease, border-color 90ms ease;
+      transition: transform 0.08s ease, background 0.08s ease, border-color 0.08s ease;
     }
 
     .handPiece.selected {
-      background: #fde047;
+      background: linear-gradient(180deg, #fde68a 0%, #facc15 100%);
       border-color: #d97706;
-      transform: scale(var(--selected-scale)) translateY(-2px);
+      transform: translateY(-2px) scale(1.06);
     }
 
     .boardFrame {
       width: fit-content;
-      padding: 10px;
-      background: #7c4a14;
-      border-radius: 18px;
-      box-shadow: 0 18px 34px rgba(0,0,0,0.32);
-      position: relative;
+      padding: 12px;
+      border-radius: 20px;
+      background:
+        linear-gradient(180deg, var(--board-frame-2) 0%, var(--board-frame-1) 100%);
+      box-shadow:
+        0 18px 36px rgba(0,0,0,0.34),
+        inset 0 1px 0 rgba(255,255,255,0.12);
     }
 
     .board {
@@ -186,29 +201,26 @@
       grid-template-columns: repeat(9, var(--cell-size));
       grid-template-rows: repeat(9, var(--cell-size));
       gap: 1px;
-      background: #57310d;
+      background: var(--board-line);
       padding: 2px;
       border-radius: 10px;
-      touch-action: none;
       position: relative;
     }
 
     .cell {
       width: var(--cell-size);
       height: var(--cell-size);
-      background:
-        linear-gradient(180deg, var(--board-light) 0%, var(--board-dark) 100%);
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      user-select: none;
-      overflow: visible;
+      background:
+        linear-gradient(180deg, var(--board-cell-1) 0%, var(--board-cell-2) 100%);
     }
 
     .cell.selected {
-      background: linear-gradient(180deg, #f8d46b 0%, #eab308 100%);
+      background: linear-gradient(180deg, var(--selected-cell-1) 0%, var(--selected-cell-2) 100%);
     }
 
     .cell.legal::after {
@@ -216,8 +228,8 @@
       width: 14px;
       height: 14px;
       border-radius: 999px;
-      background: rgba(34,197,94,0.98);
-      box-shadow: 0 0 0 3px rgba(255,255,255,0.35) inset;
+      background: var(--legal-green);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.28) inset;
       position: absolute;
       pointer-events: none;
     }
@@ -225,29 +237,33 @@
     .piece {
       width: 82%;
       height: 82%;
-      background: var(--piece-bg);
-      border: 1.5px solid var(--piece-border);
       clip-path: polygon(50% 0%, 100% 28%, 88% 100%, 12% 100%, 0% 28%);
+      background:
+        linear-gradient(180deg, var(--piece-bg-1) 0%, var(--piece-bg-2) 100%);
+      border: 1.5px solid var(--piece-border);
+      box-shadow:
+        0 4px 10px rgba(0,0,0,0.16),
+        inset 0 1px 0 rgba(255,255,255,0.45);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: bold;
-      font-size: clamp(15px, 3.8vw, 24px);
+      font-size: clamp(15px, 3.7vw, 24px);
       color: #111827;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.14);
-      user-select: none;
       transform: rotate(0deg) scale(1);
-      transition: transform 90ms ease, box-shadow 90ms ease, opacity 60ms ease;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, opacity 0.08s ease;
       pointer-events: none;
     }
 
     .piece.promoted {
-      color: #c2410c;
+      color: var(--promoted-red);
     }
 
     .piece.selected {
-      transform: rotate(var(--piece-rotation, 0deg)) scale(var(--selected-scale)) translateY(-2px);
-      box-shadow: 0 8px 16px rgba(0,0,0,0.22);
+      transform: rotate(var(--piece-rotation, 0deg)) translateY(-2px) scale(1.08);
+      box-shadow:
+        0 8px 18px rgba(0,0,0,0.24),
+        inset 0 1px 0 rgba(255,255,255,0.45);
     }
 
     .piece.hiddenSource {
@@ -276,30 +292,11 @@
       display: grid;
       grid-template-columns: 36px 1fr 72px 58px;
       gap: 8px;
+      align-items: center;
       padding: 8px 10px;
       border-radius: 10px;
       background: rgba(255,255,255,0.06);
       font-size: 13px;
-      align-items: center;
-    }
-
-    .floatingPiece {
-      position: fixed;
-      left: 0;
-      top: 0;
-      width: calc(var(--cell-size) * 0.92);
-      height: calc(var(--cell-size) * 0.92);
-      pointer-events: none;
-      z-index: 9999;
-      transform: translate(-50%, -50%);
-      filter: drop-shadow(0 10px 14px rgba(0,0,0,0.28));
-    }
-
-    .floatingPiece .piece {
-      width: 100%;
-      height: 100%;
-      transform: rotate(var(--piece-rotation, 0deg)) scale(var(--lift-scale));
-      box-shadow: 0 10px 18px rgba(0,0,0,0.25);
     }
 
     @media (max-width: 920px) {
@@ -311,7 +308,6 @@
     @media (max-width: 520px) {
       :root {
         --cell-size: min(10.55vw, 40px);
-        --snap-px: 15;
       }
 
       .page {
@@ -388,16 +384,13 @@
     let socket = null;
     let board = [];
     let hands = null;
-    let selected = null; // {kind:'board', r,c} or {kind:'hand', piece}
+    let selected = null;
     let mySide = null;
     let currentTurn = null;
     let myName = "";
     let players = null;
     let gameEnded = false;
     let pendingPromotion = null;
-
-    let drag = null; // { kind, origin, pieceType, owner, pointerId, fromHand }
-    let boardRectCache = null;
 
     const HAND_ORDER = ["R","B","G","S","N","L","P"];
 
@@ -446,6 +439,10 @@
       return { PR:"R", PB:"B", PS:"S", PN:"N", PL:"L", PP:"P" }[type] || type;
     }
 
+    function isPromoted(type) {
+      return ["PR","PB","PS","PN","PL","PP"].includes(type);
+    }
+
     function promotionZone(side, row) {
       return side === "black" ? row <= 2 : row >= 6;
     }
@@ -464,10 +461,6 @@
     function pieceDisplay(piece) {
       if (!piece) return "";
       return PIECE_LABELS[piece.type] || piece.type;
-    }
-
-    function isPromoted(type) {
-      return ["PR","PB","PS","PN","PL","PP"].includes(type);
     }
 
     function getPieceRotation(owner) {
@@ -680,25 +673,15 @@
       return { r: vr, c: vc };
     }
 
-    function boardToView(r, c) {
-      if (mySide === "white") return { r: 8 - r, c: 8 - c };
-      return { r, c };
-    }
-
     function getCurrentLegalMap() {
-      if (selected && selected.kind === "board") {
-        return legalBoardMoves(selected.r, selected.c);
-      }
-      if (selected && selected.kind === "hand") {
-        return legalDrops(mySide, selected.piece);
-      }
+      if (selected && selected.kind === "board") return legalBoardMoves(selected.r, selected.c);
+      if (selected && selected.kind === "hand") return legalDrops(mySide, selected.piece);
       return [];
     }
 
     function clearSelection() {
       selected = null;
       hidePromotionBar();
-      removeFloating();
     }
 
     function connect() {
@@ -860,6 +843,12 @@
       }
     }
 
+    function handleCellClick(vr, vc) {
+      const { r, c } = viewToBoard(vr, vc);
+      executeBoardClick(r, c);
+      render();
+    }
+
     function handleHandClick(side, piece) {
       if (gameEnded) return;
       if (currentTurn !== mySide) return;
@@ -868,141 +857,6 @@
 
       hidePromotionBar();
       selected = { kind: "hand", piece };
-      render();
-    }
-
-    function boardPointerInfo(clientX, clientY) {
-      const boardEl = document.getElementById("board");
-      const rect = boardEl.getBoundingClientRect();
-      boardRectCache = rect;
-
-      const cell = rect.width / 9;
-      let vc = Math.floor((clientX - rect.left) / cell);
-      let vr = Math.floor((clientY - rect.top) / cell);
-
-      if (vc < 0 || vc > 8 || vr < 0 || vr > 8) {
-        return { inside: false, rect, cell };
-      }
-
-      const centerX = rect.left + (vc + 0.5) * cell;
-      const centerY = rect.top + (vr + 0.5) * cell;
-      const dx = clientX - centerX;
-      const dy = clientY - centerY;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-
-      if (dist < parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--snap-px"))) {
-        clientX = centerX;
-        clientY = centerY;
-      }
-
-      return {
-        inside: true,
-        vr,
-        vc,
-        ...viewToBoard(vr, vc),
-        snapX: clientX,
-        snapY: clientY,
-        rect,
-        cell
-      };
-    }
-
-    function renderFloating(clientX, clientY) {
-      if (!drag) return;
-      removeFloating();
-
-      const holder = document.createElement("div");
-      holder.className = "floatingPiece";
-      holder.id = "floatingPiece";
-
-      let owner = drag.owner;
-      let type = drag.pieceType;
-
-      holder.innerHTML = `
-        <div class="piece ${isPromoted(type) ? "promoted" : ""}" style="--piece-rotation:${getPieceRotation(owner)}deg">
-          ${PIECE_LABELS[type] || type}
-        </div>
-      `;
-
-      holder.style.left = clientX + "px";
-      holder.style.top = clientY + "px";
-      document.body.appendChild(holder);
-    }
-
-    function removeFloating() {
-      const el = document.getElementById("floatingPiece");
-      if (el) el.remove();
-    }
-
-    function startDragBoard(e, r, c) {
-      if (gameEnded) return;
-      if (currentTurn !== mySide) return;
-      const piece = board[r][c];
-      if (!piece || piece.owner !== mySide) return;
-
-      selected = { kind: "board", r, c };
-      hidePromotionBar();
-      drag = {
-        kind: "board",
-        origin: { r, c },
-        pieceType: piece.type,
-        owner: piece.owner,
-        pointerId: e.pointerId
-      };
-
-      e.currentTarget.setPointerCapture?.(e.pointerId);
-      const info = boardPointerInfo(e.clientX, e.clientY);
-      render();
-      renderFloating(info.inside ? info.snapX : e.clientX, info.inside ? info.snapY : e.clientY);
-    }
-
-    function startDragHand(e, side, piece) {
-      if (gameEnded) return;
-      if (currentTurn !== mySide) return;
-      if (side !== mySide) return;
-      if (!hands || hands[side][piece] <= 0) return;
-
-      selected = { kind: "hand", piece };
-      hidePromotionBar();
-      drag = {
-        kind: "hand",
-        pieceType: piece,
-        owner: side,
-        pointerId: e.pointerId
-      };
-
-      e.currentTarget.setPointerCapture?.(e.pointerId);
-      render();
-      renderFloating(e.clientX, e.clientY);
-    }
-
-    function onGlobalPointerMove(e) {
-      if (!drag) return;
-      const info = boardPointerInfo(e.clientX, e.clientY);
-      renderFloating(info.inside ? info.snapX : e.clientX, info.inside ? info.snapY : e.clientY);
-    }
-
-    function onGlobalPointerUp(e) {
-      if (!drag) return;
-
-      const info = boardPointerInfo(e.clientX, e.clientY);
-      const wasDrag = drag;
-      drag = null;
-      removeFloating();
-
-      if (!info.inside) {
-        render();
-        return;
-      }
-
-      executeBoardClick(info.r, info.c);
-      render();
-    }
-
-    function onGlobalPointerCancel() {
-      if (!drag) return;
-      drag = null;
-      removeFloating();
       render();
     }
 
@@ -1033,9 +887,7 @@
             div.classList.add("selected");
           }
           div.textContent = `${PIECE_LABELS[p]}×${count}`;
-
           div.onclick = () => handleHandClick(side, p);
-          div.onpointerdown = (e) => startDragHand(e, side, p);
           target.appendChild(div);
         }
       }
@@ -1065,40 +917,22 @@
             const pieceDiv = document.createElement("div");
             pieceDiv.className = "piece";
             if (isPromoted(p.type)) pieceDiv.classList.add("promoted");
-            if (selected && selected.kind === "board" && selected.r === r && selected.c === c && !drag) {
+            if (selected && selected.kind === "board" && selected.r === r && selected.c === c) {
               pieceDiv.classList.add("selected");
             }
-            if (drag && drag.kind === "board" && drag.origin.r === r && drag.origin.c === c) {
-              pieceDiv.classList.add("hiddenSource");
-            }
-
             pieceDiv.style.setProperty("--piece-rotation", `${getPieceRotation(p.owner)}deg`);
             pieceDiv.style.transform = `rotate(${getPieceRotation(p.owner)}deg)`;
             pieceDiv.textContent = pieceDisplay(p);
             div.appendChild(pieceDiv);
           }
 
-          div.onclick = () => {
-            if (drag) return;
-            handleCellClick(vr, vc);
-          };
-          div.onpointerdown = (e) => {
-            if (!p) return;
-            startDragBoard(e, r, c);
-          };
-
+          div.onclick = () => handleCellClick(vr, vc);
           el.appendChild(div);
         }
       }
 
       renderHands();
       renderInfo();
-    }
-
-    function handleCellClick(vr, vc) {
-      const { r, c } = viewToBoard(vr, vc);
-      executeBoardClick(r, c);
-      render();
     }
 
     function renderInfo() {
@@ -1123,25 +957,19 @@
       try {
         const res = await fetch("/api/ranking");
         const data = await res.json();
-        const body = data.slice(0, 20).map((u, i) => {
-          return `
-            <div class="rankRow">
-              <div>${i + 1}</div>
-              <div>${u.name}</div>
-              <div>${u.rating}</div>
-              <div>${u.games}局</div>
-            </div>
-          `;
-        }).join("");
+        const body = data.slice(0, 20).map((u, i) => `
+          <div class="rankRow">
+            <div>${i + 1}</div>
+            <div>${u.name}</div>
+            <div>${u.rating}</div>
+            <div>${u.games}局</div>
+          </div>
+        `).join("");
         document.getElementById("rankingBody").innerHTML = body || "まだデータなし";
       } catch {
         document.getElementById("rankingBody").textContent = "ランキング取得失敗";
       }
     }
-
-    window.addEventListener("pointermove", onGlobalPointerMove);
-    window.addEventListener("pointerup", onGlobalPointerUp);
-    window.addEventListener("pointercancel", onGlobalPointerCancel);
 
     loadRanking();
   </script>

@@ -14,35 +14,35 @@
       --sub: #cbd5e1;
       --accent: #22c55e;
       --warn: #f59e0b;
-      --cell-size: min(10.2vw, 56px);
-      --board-gap: 1px;
+      --cell-size: min(10.25vw, 58px);
       --piece-bg: #f4ddb0;
       --piece-border: #8a5a24;
       --board-light: #d6a85d;
       --board-dark: #c89247;
+      --lift-scale: 1.12;
+      --selected-scale: 1.09;
+      --snap-px: 18;
     }
 
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
     html, body {
       margin: 0;
       padding: 0;
+      min-height: 100%;
       background: linear-gradient(180deg, var(--bg2) 0%, var(--bg1) 100%);
       color: var(--text);
       font-family: sans-serif;
     }
 
-    body {
-      min-height: 100vh;
-    }
-
     .page {
-      max-width: 1100px;
+      max-width: 1120px;
       margin: 0 auto;
-      padding: 12px;
+      padding: 10px;
     }
 
     .topbar {
@@ -62,7 +62,7 @@
 
     input {
       min-width: min(70vw, 260px);
-      background: white;
+      background: #fff;
       color: #111827;
     }
 
@@ -148,7 +148,7 @@
     }
 
     .handPiece {
-      min-width: 48px;
+      min-width: 50px;
       padding: 6px 10px;
       border-radius: 10px;
       background: #fff;
@@ -157,11 +157,19 @@
       cursor: pointer;
       font-weight: bold;
       user-select: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      position: relative;
+      transform: scale(1);
+      transition: transform 90ms ease, background 90ms ease, border-color 90ms ease;
     }
 
     .handPiece.selected {
       background: #fde047;
       border-color: #d97706;
+      transform: scale(var(--selected-scale)) translateY(-2px);
     }
 
     .boardFrame {
@@ -170,17 +178,19 @@
       background: #7c4a14;
       border-radius: 18px;
       box-shadow: 0 18px 34px rgba(0,0,0,0.32);
+      position: relative;
     }
 
     .board {
       display: grid;
       grid-template-columns: repeat(9, var(--cell-size));
       grid-template-rows: repeat(9, var(--cell-size));
-      gap: var(--board-gap);
+      gap: 1px;
       background: #57310d;
       padding: 2px;
       border-radius: 10px;
-      touch-action: manipulation;
+      touch-action: none;
+      position: relative;
     }
 
     .cell {
@@ -194,6 +204,7 @@
       justify-content: center;
       cursor: pointer;
       user-select: none;
+      overflow: visible;
     }
 
     .cell.selected {
@@ -208,6 +219,7 @@
       background: rgba(34,197,94,0.98);
       box-shadow: 0 0 0 3px rgba(255,255,255,0.35) inset;
       position: absolute;
+      pointer-events: none;
     }
 
     .piece {
@@ -224,14 +236,22 @@
       color: #111827;
       box-shadow: 0 4px 10px rgba(0,0,0,0.14);
       user-select: none;
-    }
-
-    .piece.white {
-      transform: rotate(180deg);
+      transform: rotate(0deg) scale(1);
+      transition: transform 90ms ease, box-shadow 90ms ease, opacity 60ms ease;
+      pointer-events: none;
     }
 
     .piece.promoted {
       color: #c2410c;
+    }
+
+    .piece.selected {
+      transform: rotate(var(--piece-rotation, 0deg)) scale(var(--selected-scale)) translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.22);
+    }
+
+    .piece.hiddenSource {
+      opacity: 0;
     }
 
     .promoBar {
@@ -263,23 +283,35 @@
       align-items: center;
     }
 
+    .floatingPiece {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: calc(var(--cell-size) * 0.92);
+      height: calc(var(--cell-size) * 0.92);
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,0.28));
+    }
+
+    .floatingPiece .piece {
+      width: 100%;
+      height: 100%;
+      transform: rotate(var(--piece-rotation, 0deg)) scale(var(--lift-scale));
+      box-shadow: 0 10px 18px rgba(0,0,0,0.25);
+    }
+
     @media (max-width: 920px) {
       .layout {
         grid-template-columns: 1fr;
-      }
-
-      .sidePanel {
-        order: 3;
-      }
-
-      .rankingPanel {
-        order: 4;
       }
     }
 
     @media (max-width: 520px) {
       :root {
-        --cell-size: min(10.3vw, 40px);
+        --cell-size: min(10.55vw, 40px);
+        --snap-px: 15;
       }
 
       .page {
@@ -293,6 +325,11 @@
       .rankRow {
         grid-template-columns: 28px 1fr 62px 48px;
         font-size: 12px;
+      }
+
+      .cell.legal::after {
+        width: 12px;
+        height: 12px;
       }
     }
   </style>
@@ -309,7 +346,7 @@
     <div id="status" class="statusBar">未接続</div>
 
     <div class="layout">
-      <div class="panel sidePanel">
+      <div class="panel">
         <h3>対局情報</h3>
         <div id="myInfo" class="infoLine">自分: -</div>
         <div id="myRating" class="infoLine">レート: -</div>
@@ -339,7 +376,7 @@
         </div>
       </div>
 
-      <div class="panel rankingPanel">
+      <div class="panel">
         <h3>ランキング</h3>
         <div id="rankingBody" class="rankingList">読み込み中...</div>
       </div>
@@ -351,13 +388,16 @@
     let socket = null;
     let board = [];
     let hands = null;
-    let selected = null;
+    let selected = null; // {kind:'board', r,c} or {kind:'hand', piece}
     let mySide = null;
     let currentTurn = null;
     let myName = "";
     let players = null;
     let gameEnded = false;
     let pendingPromotion = null;
+
+    let drag = null; // { kind, origin, pieceType, owner, pointerId, fromHand }
+    let boardRectCache = null;
 
     const HAND_ORDER = ["R","B","G","S","N","L","P"];
 
@@ -399,25 +439,11 @@
     }
 
     function promotedType(type) {
-      return {
-        R: "PR",
-        B: "PB",
-        S: "PS",
-        N: "PN",
-        L: "PL",
-        P: "PP"
-      }[type] || type;
+      return { R:"PR", B:"PB", S:"PS", N:"PN", L:"PL", P:"PP" }[type] || type;
     }
 
     function baseType(type) {
-      return {
-        PR: "R",
-        PB: "B",
-        PS: "S",
-        PN: "N",
-        PL: "L",
-        PP: "P"
-      }[type] || type;
+      return { PR:"R", PB:"B", PS:"S", PN:"N", PL:"L", PP:"P" }[type] || type;
     }
 
     function promotionZone(side, row) {
@@ -438,6 +464,15 @@
     function pieceDisplay(piece) {
       if (!piece) return "";
       return PIECE_LABELS[piece.type] || piece.type;
+    }
+
+    function isPromoted(type) {
+      return ["PR","PB","PS","PN","PL","PP"].includes(type);
+    }
+
+    function getPieceRotation(owner) {
+      if (!mySide) return owner === "white" ? 180 : 0;
+      return owner === mySide ? 0 : 180;
     }
 
     function getPseudoMoves(r, c) {
@@ -580,7 +615,7 @@
         const must = mustPromote(piece.type, piece.owner, move.r);
         const can =
           canPromote(piece.type) &&
-          !["PR","PB","PS","PN","PL","PP"].includes(piece.type) &&
+          !isPromoted(piece.type) &&
           (promotionZone(piece.owner, r) || promotionZone(piece.owner, move.r));
 
         const choices = must ? [true] : can ? [false, true] : [false];
@@ -641,17 +676,29 @@
     }
 
     function viewToBoard(vr, vc) {
-      if (mySide === "white") {
-        return { r: 8 - vr, c: 8 - vc };
-      }
+      if (mySide === "white") return { r: 8 - vr, c: 8 - vc };
       return { r: vr, c: vc };
     }
 
     function boardToView(r, c) {
-      if (mySide === "white") {
-        return { r: 8 - r, c: 8 - c };
-      }
+      if (mySide === "white") return { r: 8 - r, c: 8 - c };
       return { r, c };
+    }
+
+    function getCurrentLegalMap() {
+      if (selected && selected.kind === "board") {
+        return legalBoardMoves(selected.r, selected.c);
+      }
+      if (selected && selected.kind === "hand") {
+        return legalDrops(mySide, selected.piece);
+      }
+      return [];
+    }
+
+    function clearSelection() {
+      selected = null;
+      hidePromotionBar();
+      removeFloating();
     }
 
     function connect() {
@@ -676,10 +723,8 @@
 
       socket.on("start", (data) => {
         mySide = data.side;
-        selected = null;
-        pendingPromotion = null;
         gameEnded = false;
-        hidePromotionBar();
+        clearSelection();
         document.getElementById("status").textContent =
           `対戦開始 / あなたは ${mySide === "black" ? "先手" : "後手"}`;
       });
@@ -689,9 +734,7 @@
         hands = data.hands;
         currentTurn = data.turn;
         players = data.players;
-        selected = null;
-        pendingPromotion = null;
-        hidePromotionBar();
+        clearSelection();
         render();
       });
 
@@ -746,17 +789,15 @@
         promote: found.promote
       });
 
-      selected = null;
-      hidePromotionBar();
+      clearSelection();
       render();
     }
 
-    function handleCellClick(vr, vc) {
+    function executeBoardClick(r, c) {
       if (!socket || !board.length || !hands) return;
       if (gameEnded) return;
       if (currentTurn !== mySide) return;
 
-      const { r, c } = viewToBoard(vr, vc);
       const clicked = board[r][c];
 
       if (selected && selected.kind === "board") {
@@ -769,7 +810,7 @@
             selected = { kind: "board", r, c };
             render();
           } else {
-            selected = null;
+            clearSelection();
             render();
           }
           return;
@@ -787,8 +828,7 @@
           promote: candidates[0].promote
         });
 
-        selected = null;
-        hidePromotionBar();
+        clearSelection();
         render();
         return;
       }
@@ -797,7 +837,7 @@
         const legal = legalDrops(mySide, selected.piece);
         const found = legal.find(m => m.to.r === r && m.to.c === c);
         if (!found) {
-          selected = null;
+          clearSelection();
           render();
           return;
         }
@@ -808,7 +848,7 @@
           to: { r, c }
         });
 
-        selected = null;
+        clearSelection();
         render();
         return;
       }
@@ -828,6 +868,141 @@
 
       hidePromotionBar();
       selected = { kind: "hand", piece };
+      render();
+    }
+
+    function boardPointerInfo(clientX, clientY) {
+      const boardEl = document.getElementById("board");
+      const rect = boardEl.getBoundingClientRect();
+      boardRectCache = rect;
+
+      const cell = rect.width / 9;
+      let vc = Math.floor((clientX - rect.left) / cell);
+      let vr = Math.floor((clientY - rect.top) / cell);
+
+      if (vc < 0 || vc > 8 || vr < 0 || vr > 8) {
+        return { inside: false, rect, cell };
+      }
+
+      const centerX = rect.left + (vc + 0.5) * cell;
+      const centerY = rect.top + (vr + 0.5) * cell;
+      const dx = clientX - centerX;
+      const dy = clientY - centerY;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+
+      if (dist < parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--snap-px"))) {
+        clientX = centerX;
+        clientY = centerY;
+      }
+
+      return {
+        inside: true,
+        vr,
+        vc,
+        ...viewToBoard(vr, vc),
+        snapX: clientX,
+        snapY: clientY,
+        rect,
+        cell
+      };
+    }
+
+    function renderFloating(clientX, clientY) {
+      if (!drag) return;
+      removeFloating();
+
+      const holder = document.createElement("div");
+      holder.className = "floatingPiece";
+      holder.id = "floatingPiece";
+
+      let owner = drag.owner;
+      let type = drag.pieceType;
+
+      holder.innerHTML = `
+        <div class="piece ${isPromoted(type) ? "promoted" : ""}" style="--piece-rotation:${getPieceRotation(owner)}deg">
+          ${PIECE_LABELS[type] || type}
+        </div>
+      `;
+
+      holder.style.left = clientX + "px";
+      holder.style.top = clientY + "px";
+      document.body.appendChild(holder);
+    }
+
+    function removeFloating() {
+      const el = document.getElementById("floatingPiece");
+      if (el) el.remove();
+    }
+
+    function startDragBoard(e, r, c) {
+      if (gameEnded) return;
+      if (currentTurn !== mySide) return;
+      const piece = board[r][c];
+      if (!piece || piece.owner !== mySide) return;
+
+      selected = { kind: "board", r, c };
+      hidePromotionBar();
+      drag = {
+        kind: "board",
+        origin: { r, c },
+        pieceType: piece.type,
+        owner: piece.owner,
+        pointerId: e.pointerId
+      };
+
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+      const info = boardPointerInfo(e.clientX, e.clientY);
+      render();
+      renderFloating(info.inside ? info.snapX : e.clientX, info.inside ? info.snapY : e.clientY);
+    }
+
+    function startDragHand(e, side, piece) {
+      if (gameEnded) return;
+      if (currentTurn !== mySide) return;
+      if (side !== mySide) return;
+      if (!hands || hands[side][piece] <= 0) return;
+
+      selected = { kind: "hand", piece };
+      hidePromotionBar();
+      drag = {
+        kind: "hand",
+        pieceType: piece,
+        owner: side,
+        pointerId: e.pointerId
+      };
+
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+      render();
+      renderFloating(e.clientX, e.clientY);
+    }
+
+    function onGlobalPointerMove(e) {
+      if (!drag) return;
+      const info = boardPointerInfo(e.clientX, e.clientY);
+      renderFloating(info.inside ? info.snapX : e.clientX, info.inside ? info.snapY : e.clientY);
+    }
+
+    function onGlobalPointerUp(e) {
+      if (!drag) return;
+
+      const info = boardPointerInfo(e.clientX, e.clientY);
+      const wasDrag = drag;
+      drag = null;
+      removeFloating();
+
+      if (!info.inside) {
+        render();
+        return;
+      }
+
+      executeBoardClick(info.r, info.c);
+      render();
+    }
+
+    function onGlobalPointerCancel() {
+      if (!drag) return;
+      drag = null;
+      removeFloating();
       render();
     }
 
@@ -858,7 +1033,9 @@
             div.classList.add("selected");
           }
           div.textContent = `${PIECE_LABELS[p]}×${count}`;
+
           div.onclick = () => handleHandClick(side, p);
+          div.onpointerdown = (e) => startDragHand(e, side, p);
           target.appendChild(div);
         }
       }
@@ -868,9 +1045,7 @@
       const el = document.getElementById("board");
       el.innerHTML = "";
 
-      let legalMap = [];
-      if (selected && selected.kind === "board") legalMap = legalBoardMoves(selected.r, selected.c);
-      if (selected && selected.kind === "hand") legalMap = legalDrops(mySide, selected.piece);
+      const legalMap = getCurrentLegalMap();
 
       for (let vr = 0; vr < 9; vr++) {
         for (let vc = 0; vc < 9; vc++) {
@@ -889,19 +1064,41 @@
           if (p) {
             const pieceDiv = document.createElement("div");
             pieceDiv.className = "piece";
-            if (p.owner === "white") pieceDiv.classList.add("white");
-            if (["PR","PB","PS","PN","PL","PP"].includes(p.type)) pieceDiv.classList.add("promoted");
+            if (isPromoted(p.type)) pieceDiv.classList.add("promoted");
+            if (selected && selected.kind === "board" && selected.r === r && selected.c === c && !drag) {
+              pieceDiv.classList.add("selected");
+            }
+            if (drag && drag.kind === "board" && drag.origin.r === r && drag.origin.c === c) {
+              pieceDiv.classList.add("hiddenSource");
+            }
+
+            pieceDiv.style.setProperty("--piece-rotation", `${getPieceRotation(p.owner)}deg`);
+            pieceDiv.style.transform = `rotate(${getPieceRotation(p.owner)}deg)`;
             pieceDiv.textContent = pieceDisplay(p);
             div.appendChild(pieceDiv);
           }
 
-          div.onclick = () => handleCellClick(vr, vc);
+          div.onclick = () => {
+            if (drag) return;
+            handleCellClick(vr, vc);
+          };
+          div.onpointerdown = (e) => {
+            if (!p) return;
+            startDragBoard(e, r, c);
+          };
+
           el.appendChild(div);
         }
       }
 
       renderHands();
       renderInfo();
+    }
+
+    function handleCellClick(vr, vc) {
+      const { r, c } = viewToBoard(vr, vc);
+      executeBoardClick(r, c);
+      render();
     }
 
     function renderInfo() {
@@ -941,6 +1138,10 @@
         document.getElementById("rankingBody").textContent = "ランキング取得失敗";
       }
     }
+
+    window.addEventListener("pointermove", onGlobalPointerMove);
+    window.addEventListener("pointerup", onGlobalPointerUp);
+    window.addEventListener("pointercancel", onGlobalPointerCancel);
 
     loadRanking();
   </script>

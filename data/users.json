@@ -30,5 +30,21 @@
     "wins": 0,
     "losses": 0,
     "draws": 0
+  },
+  "ki": {
+    "name": "ki",
+    "rating": 1500,
+    "games": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0
+  },
+  "kt": {
+    "name": "kt",
+    "rating": 1500,
+    "games": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0
   }
 }

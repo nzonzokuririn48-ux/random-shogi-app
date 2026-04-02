@@ -1,127 +1,203 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ランダム将棋</title>
   <style>
+    :root {
+      --bg1: #111827;
+      --bg2: #1f2937;
+      --panel: rgba(255,255,255,0.08);
+      --panel-border: rgba(255,255,255,0.14);
+      --text: #f8fafc;
+      --sub: #cbd5e1;
+      --accent: #22c55e;
+      --warn: #f59e0b;
+      --cell-size: min(10.2vw, 56px);
+      --board-gap: 1px;
+      --piece-bg: #f4ddb0;
+      --piece-border: #8a5a24;
+      --board-light: #d6a85d;
+      --board-dark: #c89247;
+    }
+
     * {
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(180deg, var(--bg2) 0%, var(--bg1) 100%);
+      color: var(--text);
+      font-family: sans-serif;
     }
 
     body {
-      margin: 0;
-      font-family: sans-serif;
-      background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
-      color: white;
-      text-align: center;
+      min-height: 100vh;
     }
 
-    #container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      max-width: 900px;
+    .page {
+      max-width: 1100px;
       margin: 0 auto;
-      padding: 16px;
-      gap: 14px;
+      padding: 12px;
     }
 
-    #topbar {
+    .topbar {
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
       gap: 8px;
-      width: 100%;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    input, button {
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      padding: 10px 14px;
     }
 
     input {
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: none;
-      min-width: 220px;
-      font-size: 16px;
+      min-width: min(70vw, 260px);
+      background: white;
+      color: #111827;
     }
 
     button {
-      padding: 10px 16px;
-      border: none;
-      border-radius: 10px;
       background: #374151;
       color: white;
-      font-size: 15px;
       cursor: pointer;
-      transition: 0.15s;
     }
 
     button:hover {
       background: #4b5563;
     }
 
+    .statusBar {
+      text-align: center;
+      min-height: 24px;
+      font-weight: bold;
+      color: var(--warn);
+      margin-bottom: 10px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr minmax(300px, 640px) 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
     .panel {
-      width: min(100%, 680px);
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
       border-radius: 16px;
       padding: 12px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.22);
     }
 
-    .player {
+    .panel h3 {
+      margin: 0 0 10px;
+      text-align: center;
       font-size: 18px;
-      font-weight: bold;
-      min-height: 28px;
     }
 
-    .sub {
+    .infoLine {
       font-size: 14px;
-      color: #d1d5db;
-      margin-top: 4px;
+      margin: 6px 0;
+      text-align: center;
+      color: var(--sub);
     }
 
-    .turn {
+    .turnDot {
       color: #22d3ee;
       font-weight: bold;
+      margin-left: 4px;
     }
 
-    #status {
-      min-height: 24px;
-      font-size: 16px;
+    .centerCol {
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+    }
+
+    .handBox {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 10px;
+    }
+
+    .handTitle {
+      text-align: center;
+      font-size: 14px;
+      color: var(--sub);
+      margin-bottom: 8px;
+    }
+
+    .handRow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      min-height: 46px;
+    }
+
+    .handPiece {
+      min-width: 48px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: #fff;
+      color: #111827;
+      border: 1px solid #94a3b8;
+      cursor: pointer;
       font-weight: bold;
-      color: #fbbf24;
+      user-select: none;
     }
 
-    #boardWrap {
+    .handPiece.selected {
+      background: #fde047;
+      border-color: #d97706;
+    }
+
+    .boardFrame {
+      width: fit-content;
       padding: 10px;
       background: #7c4a14;
-      border-radius: 16px;
-      box-shadow: 0 16px 32px rgba(0,0,0,0.35);
+      border-radius: 18px;
+      box-shadow: 0 18px 34px rgba(0,0,0,0.32);
     }
 
-    #board {
+    .board {
       display: grid;
-      grid-template-columns: repeat(9, 56px);
-      grid-template-rows: repeat(9, 56px);
-      gap: 1px;
-      background: #4b2e12;
+      grid-template-columns: repeat(9, var(--cell-size));
+      grid-template-rows: repeat(9, var(--cell-size));
+      gap: var(--board-gap);
+      background: #57310d;
       padding: 2px;
-      border-radius: 8px;
+      border-radius: 10px;
+      touch-action: manipulation;
     }
 
     .cell {
-      width: 56px;
-      height: 56px;
-      background: #deb76f;
+      width: var(--cell-size);
+      height: var(--cell-size);
+      background:
+        linear-gradient(180deg, var(--board-light) 0%, var(--board-dark) 100%);
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
       cursor: pointer;
       user-select: none;
     }
 
     .cell.selected {
-      background: #fde047;
+      background: linear-gradient(180deg, #f8d46b 0%, #eab308 100%);
     }
 
     .cell.legal::after {
@@ -129,23 +205,25 @@
       width: 14px;
       height: 14px;
       border-radius: 999px;
-      background: rgba(34,197,94,0.95);
+      background: rgba(34,197,94,0.98);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.35) inset;
       position: absolute;
     }
 
     .piece {
       width: 82%;
       height: 82%;
-      background: #f6dd9b;
-      border: 1.5px solid #7c4a14;
+      background: var(--piece-bg);
+      border: 1.5px solid var(--piece-border);
       clip-path: polygon(50% 0%, 100% 28%, 88% 100%, 12% 100%, 0% 28%);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #111827;
       font-weight: bold;
-      font-size: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+      font-size: clamp(15px, 3.8vw, 24px);
+      color: #111827;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.14);
+      user-select: none;
     }
 
     .piece.white {
@@ -156,168 +234,115 @@
       color: #c2410c;
     }
 
-    .hands {
-      display: grid;
+    .promoBar {
+      display: none;
       gap: 10px;
-      width: min(100%, 680px);
-    }
-
-    .handBox {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 14px;
-      padding: 10px;
-    }
-
-    .handTitle {
-      font-size: 14px;
-      color: #e5e7eb;
-      margin-bottom: 8px;
-    }
-
-    .handRow {
-      display: flex;
-      flex-wrap: wrap;
       justify-content: center;
-      gap: 8px;
-      min-height: 40px;
+      width: 100%;
     }
 
-    .handPiece {
-      background: white;
-      color: #111827;
-      border: 1px solid #9ca3af;
-      border-radius: 10px;
-      padding: 6px 10px;
-      cursor: pointer;
-      min-width: 48px;
-      font-weight: bold;
+    .promoBar button {
+      min-width: 110px;
     }
 
-    .handPiece.selected {
-      background: #fde047;
-      border-color: #d97706;
-    }
-
-    #infoGrid {
+    .rankingList {
       display: grid;
-      gap: 8px;
-      width: min(100%, 680px);
-    }
-
-    .infoCard {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 14px;
-      padding: 12px;
-    }
-
-    #ranking {
-      width: min(100%, 680px);
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 14px;
-      padding: 12px;
-      text-align: left;
-    }
-
-    #ranking h3 {
-      margin-top: 0;
-      text-align: center;
+      gap: 6px;
+      max-height: 420px;
+      overflow: auto;
     }
 
     .rankRow {
       display: grid;
-      grid-template-columns: 40px 1fr 80px 70px;
+      grid-template-columns: 36px 1fr 72px 58px;
       gap: 8px;
       padding: 8px 10px;
       border-radius: 10px;
       background: rgba(255,255,255,0.06);
-      margin-bottom: 6px;
-      font-size: 14px;
+      font-size: 13px;
+      align-items: center;
     }
 
-    #promoBar {
-      display: none;
-      justify-content: center;
-      gap: 10px;
-      width: min(100%, 680px);
+    @media (max-width: 920px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidePanel {
+        order: 3;
+      }
+
+      .rankingPanel {
+        order: 4;
+      }
     }
 
-    @media (max-width: 700px) {
-      #board {
-        grid-template-columns: repeat(9, 38px);
-        grid-template-rows: repeat(9, 38px);
+    @media (max-width: 520px) {
+      :root {
+        --cell-size: min(10.3vw, 40px);
       }
 
-      .cell {
-        width: 38px;
-        height: 38px;
+      .page {
+        padding: 8px;
       }
 
-      .piece {
+      input, button {
         font-size: 15px;
       }
 
       .rankRow {
-        grid-template-columns: 32px 1fr 70px 56px;
+        grid-template-columns: 28px 1fr 62px 48px;
         font-size: 12px;
       }
     }
   </style>
 </head>
 <body>
-  <div id="container">
-    <div id="topbar">
+  <div class="page">
+    <div class="topbar">
       <input id="name" placeholder="名前を入力">
       <button onclick="connect()">接続</button>
       <button onclick="resign()">投了</button>
       <button onclick="loadRanking()">ランキング更新</button>
     </div>
 
-    <div id="status">未接続</div>
+    <div id="status" class="statusBar">未接続</div>
 
-    <div class="panel">
-      <div id="opponent" class="player">相手: -</div>
-      <div id="opponentSub" class="sub">レート: -</div>
-    </div>
-
-    <div class="hands">
-      <div class="handBox">
-        <div class="handTitle">後手の持ち駒</div>
-        <div id="whiteHand" class="handRow"></div>
+    <div class="layout">
+      <div class="panel sidePanel">
+        <h3>対局情報</h3>
+        <div id="myInfo" class="infoLine">自分: -</div>
+        <div id="myRating" class="infoLine">レート: -</div>
+        <div id="opInfo" class="infoLine">相手: -</div>
+        <div id="opRating" class="infoLine">相手レート: -</div>
+        <div id="turnInfo" class="infoLine">手番: -</div>
       </div>
-    </div>
 
-    <div id="boardWrap">
-      <div id="board"></div>
-    </div>
+      <div class="centerCol">
+        <div class="handBox">
+          <div id="topHandTitle" class="handTitle">相手の持ち駒</div>
+          <div id="topHand" class="handRow"></div>
+        </div>
 
-    <div class="hands">
-      <div class="handBox">
-        <div class="handTitle">先手の持ち駒</div>
-        <div id="blackHand" class="handRow"></div>
+        <div class="boardFrame">
+          <div id="board" class="board"></div>
+        </div>
+
+        <div id="promoBar" class="promoBar">
+          <button onclick="choosePromotion(true)">成る</button>
+          <button onclick="choosePromotion(false)">成らない</button>
+        </div>
+
+        <div class="handBox">
+          <div id="bottomHandTitle" class="handTitle">自分の持ち駒</div>
+          <div id="bottomHand" class="handRow"></div>
+        </div>
       </div>
-    </div>
 
-    <div id="promoBar">
-      <button onclick="choosePromotion(true)">成る</button>
-      <button onclick="choosePromotion(false)">成らない</button>
-    </div>
-
-    <div id="infoGrid">
-      <div class="infoCard">
-        <div id="me" class="player">自分: -</div>
-        <div id="meSub" class="sub">レート: -</div>
+      <div class="panel rankingPanel">
+        <h3>ランキング</h3>
+        <div id="rankingBody" class="rankingList">読み込み中...</div>
       </div>
-      <div class="infoCard">
-        <div id="turnInfo" class="player">手番: -</div>
-      </div>
-    </div>
-
-    <div id="ranking">
-      <h3>ランキング</h3>
-      <div id="rankingBody">読み込み中...</div>
     </div>
   </div>
 
@@ -330,12 +355,11 @@
     let mySide = null;
     let currentTurn = null;
     let myName = "";
-    let opponentName = "";
     let players = null;
     let gameEnded = false;
     let pendingPromotion = null;
 
-    const HAND_ORDER = ["R", "B", "G", "S", "N", "L", "P"];
+    const HAND_ORDER = ["R","B","G","S","N","L","P"];
 
     const PIECE_LABELS = {
       K: "玉",
@@ -371,7 +395,7 @@
     }
 
     function canPromote(type) {
-      return ["R", "B", "S", "N", "L", "P"].includes(type);
+      return ["R","B","S","N","L","P"].includes(type);
     }
 
     function promotedType(type) {
@@ -533,9 +557,7 @@
       const target = nextBoard[to.r][to.c];
       if (target) {
         const captured = baseType(target.type);
-        if (captured !== "K") {
-          nextHands[piece.owner][captured] += 1;
-        }
+        if (captured !== "K") nextHands[piece.owner][captured] += 1;
       }
 
       nextBoard[from.r][from.c] = null;
@@ -611,13 +633,25 @@
           nextBoard[r][c] = { type, owner: side };
           nextHands[side][type] -= 1;
 
-          if (!isCheck(side, nextBoard)) {
-            moves.push({ to: { r, c }, piece: type });
-          }
+          if (!isCheck(side, nextBoard)) moves.push({ to: { r, c }, piece: type });
         }
       }
 
       return moves;
+    }
+
+    function viewToBoard(vr, vc) {
+      if (mySide === "white") {
+        return { r: 8 - vr, c: 8 - vc };
+      }
+      return { r: vr, c: vc };
+    }
+
+    function boardToView(r, c) {
+      if (mySide === "white") {
+        return { r: 8 - r, c: 8 - c };
+      }
+      return { r, c };
     }
 
     function connect() {
@@ -717,11 +751,12 @@
       render();
     }
 
-    function handleCellClick(r, c) {
+    function handleCellClick(vr, vc) {
       if (!socket || !board.length || !hands) return;
       if (gameEnded) return;
       if (currentTurn !== mySide) return;
 
+      const { r, c } = viewToBoard(vr, vc);
       const clicked = board[r][c];
 
       if (selected && selected.kind === "board") {
@@ -797,15 +832,22 @@
     }
 
     function renderHands() {
-      const blackHand = document.getElementById("blackHand");
-      const whiteHand = document.getElementById("whiteHand");
-      blackHand.innerHTML = "";
-      whiteHand.innerHTML = "";
+      const topHand = document.getElementById("topHand");
+      const bottomHand = document.getElementById("bottomHand");
+      topHand.innerHTML = "";
+      bottomHand.innerHTML = "";
 
-      if (!hands) return;
+      if (!hands || !mySide) return;
 
-      for (const side of ["white", "black"]) {
-        const target = side === "black" ? blackHand : whiteHand;
+      const topSide = opponent(mySide);
+      const bottomSide = mySide;
+
+      document.getElementById("topHandTitle").textContent =
+        `${topSide === "black" ? "先手" : "後手"}の持ち駒`;
+      document.getElementById("bottomHandTitle").textContent =
+        `${bottomSide === "black" ? "先手" : "後手"}の持ち駒`;
+
+      for (const [side, target] of [[topSide, topHand], [bottomSide, bottomHand]]) {
         for (const p of HAND_ORDER) {
           const count = hands[side][p];
           if (count <= 0) continue;
@@ -827,15 +869,12 @@
       el.innerHTML = "";
 
       let legalMap = [];
-      if (selected && selected.kind === "board") {
-        legalMap = legalBoardMoves(selected.r, selected.c);
-      }
-      if (selected && selected.kind === "hand") {
-        legalMap = legalDrops(mySide, selected.piece);
-      }
+      if (selected && selected.kind === "board") legalMap = legalBoardMoves(selected.r, selected.c);
+      if (selected && selected.kind === "hand") legalMap = legalDrops(mySide, selected.piece);
 
-      for (let r = 0; r < 9; r++) {
-        for (let c = 0; c < 9; c++) {
+      for (let vr = 0; vr < 9; vr++) {
+        for (let vc = 0; vc < 9; vc++) {
+          const { r, c } = viewToBoard(vr, vc);
           const div = document.createElement("div");
           div.className = "cell";
 
@@ -856,7 +895,7 @@
             div.appendChild(pieceDiv);
           }
 
-          div.onclick = () => handleCellClick(r, c);
+          div.onclick = () => handleCellClick(vr, vc);
           el.appendChild(div);
         }
       }
@@ -871,13 +910,13 @@
       const opName = opSide && players ? players[opSide].name : "-";
       const opRating = opSide && players ? players[opSide].rating : "-";
 
-      document.getElementById("me").innerHTML =
-        `自分: ${myName} ${currentTurn === mySide ? "<span class='turn'>●</span>" : ""}`;
-      document.getElementById("meSub").textContent = `レート: ${myRating}`;
+      document.getElementById("myInfo").innerHTML =
+        `自分: ${myName} ${currentTurn === mySide ? "<span class='turnDot'>●</span>" : ""}`;
+      document.getElementById("myRating").textContent = `レート: ${myRating}`;
 
-      document.getElementById("opponent").innerHTML =
-        `相手: ${opName} ${currentTurn && opSide === currentTurn ? "<span class='turn'>●</span>" : ""}`;
-      document.getElementById("opponentSub").textContent = `レート: ${opRating}`;
+      document.getElementById("opInfo").innerHTML =
+        `相手: ${opName} ${currentTurn && opSide === currentTurn ? "<span class='turnDot'>●</span>" : ""}`;
+      document.getElementById("opRating").textContent = `相手レート: ${opRating}`;
 
       document.getElementById("turnInfo").textContent =
         `手番: ${currentTurn === "black" ? "先手" : currentTurn === "white" ? "後手" : "-"}`;

@@ -1,995 +1,139 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- PWA -->
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="theme-color" content="#0f172a">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>ランダム将棋</title>
+
   <style>
-    :root {
-      --bg1: #0f172a;
-      --bg2: #1e293b;
-      --panel: rgba(255,255,255,0.08);
-      --panel-border: rgba(255,255,255,0.12);
-      --text: #f8fafc;
-      --sub: #cbd5e1;
-
-      --cell-size: min(10.2vw, 58px);
-
-      --board-frame-1: #6b3f13;
-      --board-frame-2: #8a5720;
-      --board-line: rgba(67, 35, 8, 0.92);
-
-      --board-cell-1: #ddb36a;
-      --board-cell-2: #c98e42;
-
-      --piece-bg-1: #f8e9bf;
-      --piece-bg-2: #efd59a;
-      --piece-border: #8a5623;
-
-      --selected-cell-1: #fde68a;
-      --selected-cell-2: #facc15;
-
-      --legal-green: rgba(34,197,94,0.95);
-      --promoted-red: #c2410c;
-      --turn-cyan: #22d3ee;
-    }
-
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      user-select: none;
-    }
-
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
-      min-height: 100%;
-      color: var(--text);
-      font-family: sans-serif;
-      background:
-        radial-gradient(circle at top, rgba(255,255,255,0.06), transparent 40%),
-        linear-gradient(180deg, var(--bg2) 0%, var(--bg1) 100%);
-    }
-
-    .page {
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 10px;
-    }
-
-    .topbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: center;
-      margin-bottom: 10px;
-    }
-
-    input, button {
-      font-size: 16px;
-      border: none;
-      border-radius: 12px;
-      padding: 10px 14px;
-    }
-
-    input {
-      min-width: min(72vw, 260px);
-      background: white;
-      color: #111827;
-    }
-
-    button {
-      background: #334155;
+      background: #0f172a;
       color: white;
-      cursor: pointer;
-      transition: transform 0.08s ease, background 0.12s ease;
-    }
-
-    button:hover {
-      background: #475569;
-    }
-
-    button:active {
-      transform: translateY(1px);
-    }
-
-    .statusBar {
-      min-height: 24px;
+      font-family: sans-serif;
       text-align: center;
-      color: #fbbf24;
-      font-weight: bold;
-      margin-bottom: 10px;
     }
 
-    .layout {
+    #board {
       display: grid;
-      grid-template-columns: 1fr minmax(300px, 650px) 1fr;
-      gap: 14px;
-      align-items: start;
-    }
-
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      border-radius: 18px;
-      padding: 14px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.22);
-      backdrop-filter: blur(6px);
-    }
-
-    .panel h3 {
-      margin: 0 0 10px;
-      text-align: center;
-      font-size: 18px;
-    }
-
-    .infoLine {
-      font-size: 14px;
-      color: var(--sub);
-      text-align: center;
-      margin: 7px 0;
-    }
-
-    .turnDot {
-      color: var(--turn-cyan);
-      margin-left: 4px;
-      font-weight: bold;
-    }
-
-    .centerCol {
-      display: grid;
-      gap: 10px;
-      justify-items: center;
-    }
-
-    .handBox {
-      width: 100%;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid var(--panel-border);
-      border-radius: 16px;
-      padding: 10px;
-    }
-
-    .handTitle {
-      text-align: center;
-      color: var(--sub);
-      font-size: 14px;
-      margin-bottom: 8px;
-    }
-
-    .handRow {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px;
-      min-height: 46px;
-    }
-
-    .handPiece {
-      min-width: 50px;
-      background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
-      color: #111827;
-      border: 1px solid #94a3b8;
-      border-radius: 10px;
-      padding: 6px 10px;
-      font-weight: bold;
-      cursor: pointer;
-      transform: scale(1);
-      transition: transform 0.08s ease, background 0.08s ease, border-color 0.08s ease;
-    }
-
-    .handPiece.selected {
-      background: linear-gradient(180deg, #fde68a 0%, #facc15 100%);
-      border-color: #d97706;
-      transform: translateY(-2px) scale(1.06);
-    }
-
-    .boardFrame {
-      width: fit-content;
-      padding: 12px;
-      border-radius: 20px;
-      background:
-        linear-gradient(180deg, var(--board-frame-2) 0%, var(--board-frame-1) 100%);
-      box-shadow:
-        0 18px 36px rgba(0,0,0,0.34),
-        inset 0 1px 0 rgba(255,255,255,0.12);
-    }
-
-    .board {
-      display: grid;
-      grid-template-columns: repeat(9, var(--cell-size));
-      grid-template-rows: repeat(9, var(--cell-size));
-      gap: 1px;
-      background: var(--board-line);
-      padding: 2px;
-      border-radius: 10px;
-      position: relative;
+      grid-template-columns: repeat(9, 1fr);
+      max-width: 420px;
+      margin: 20px auto;
     }
 
     .cell {
-      width: var(--cell-size);
-      height: var(--cell-size);
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      background:
-        linear-gradient(180deg, var(--board-cell-1) 0%, var(--board-cell-2) 100%);
-    }
-
-    .cell.selected {
-      background: linear-gradient(180deg, var(--selected-cell-1) 0%, var(--selected-cell-2) 100%);
-    }
-
-    .cell.legal::after {
-      content: "";
-      width: 14px;
-      height: 14px;
-      border-radius: 999px;
-      background: var(--legal-green);
-      box-shadow: 0 0 0 3px rgba(255,255,255,0.28) inset;
-      position: absolute;
-      pointer-events: none;
-    }
-
-    .piece {
-      width: 82%;
-      height: 82%;
-      clip-path: polygon(50% 0%, 100% 28%, 88% 100%, 12% 100%, 0% 28%);
-      background:
-        linear-gradient(180deg, var(--piece-bg-1) 0%, var(--piece-bg-2) 100%);
-      border: 1.5px solid var(--piece-border);
-      box-shadow:
-        0 4px 10px rgba(0,0,0,0.16),
-        inset 0 1px 0 rgba(255,255,255,0.45);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: clamp(15px, 3.7vw, 24px);
-      color: #111827;
-      transform: rotate(0deg) scale(1);
-      transition: transform 0.08s ease, box-shadow 0.08s ease, opacity 0.08s ease;
-      pointer-events: none;
-    }
-
-    .piece.promoted {
-      color: var(--promoted-red);
-    }
-
-    .piece.selected {
-      transform: rotate(var(--piece-rotation, 0deg)) translateY(-2px) scale(1.08);
-      box-shadow:
-        0 8px 18px rgba(0,0,0,0.24),
-        inset 0 1px 0 rgba(255,255,255,0.45);
-    }
-
-    .piece.hiddenSource {
-      opacity: 0;
-    }
-
-    .promoBar {
-      display: none;
-      gap: 10px;
-      justify-content: center;
       width: 100%;
-    }
-
-    .promoBar button {
-      min-width: 110px;
-    }
-
-    .rankingList {
-      display: grid;
-      gap: 6px;
-      max-height: 420px;
-      overflow: auto;
-    }
-
-    .rankRow {
-      display: grid;
-      grid-template-columns: 36px 1fr 72px 58px;
-      gap: 8px;
+      aspect-ratio: 1;
+      border: 1px solid #333;
+      display: flex;
       align-items: center;
-      padding: 8px 10px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.06);
-      font-size: 13px;
+      justify-content: center;
+      background: #d9a441;
+      font-size: 20px;
+      font-weight: bold;
     }
 
-    @media (max-width: 920px) {
-      .layout {
-        grid-template-columns: 1fr;
-      }
+    .piece.white {
+      transform: rotate(180deg);
     }
 
-    @media (max-width: 520px) {
-      :root {
-        --cell-size: min(10.55vw, 40px);
-      }
-
-      .page {
-        padding: 8px;
-      }
-
-      input, button {
-        font-size: 15px;
-      }
-
-      .rankRow {
-        grid-template-columns: 28px 1fr 62px 48px;
-        font-size: 12px;
-      }
-
-      .cell.legal::after {
-        width: 12px;
-        height: 12px;
-      }
+    button {
+      padding: 10px;
+      margin: 5px;
+      font-size: 16px;
     }
   </style>
 </head>
+
 <body>
-  <div class="page">
-    <div class="topbar">
-      <input id="name" placeholder="名前を入力">
-      <button onclick="connect()">接続</button>
-      <button onclick="resign()">投了</button>
-      <button onclick="loadRanking()">ランキング更新</button>
-    </div>
 
-    <div id="status" class="statusBar">未接続</div>
+<h2>ランダム将棋</h2>
 
-    <div class="layout">
-      <div class="panel">
-        <h3>対局情報</h3>
-        <div id="myInfo" class="infoLine">自分: -</div>
-        <div id="myRating" class="infoLine">レート: -</div>
-        <div id="opInfo" class="infoLine">相手: -</div>
-        <div id="opRating" class="infoLine">相手レート: -</div>
-        <div id="turnInfo" class="infoLine">手番: -</div>
-      </div>
+<input id="name" placeholder="名前">
+<button onclick="connect()">接続</button>
+<button onclick="resign()">投了</button>
 
-      <div class="centerCol">
-        <div class="handBox">
-          <div id="topHandTitle" class="handTitle">相手の持ち駒</div>
-          <div id="topHand" class="handRow"></div>
-        </div>
+<div id="status">未接続</div>
 
-        <div class="boardFrame">
-          <div id="board" class="board"></div>
-        </div>
+<div id="board"></div>
 
-        <div id="promoBar" class="promoBar">
-          <button onclick="choosePromotion(true)">成る</button>
-          <button onclick="choosePromotion(false)">成らない</button>
-        </div>
+<script src="/socket.io/socket.io.js"></script>
 
-        <div class="handBox">
-          <div id="bottomHandTitle" class="handTitle">自分の持ち駒</div>
-          <div id="bottomHand" class="handRow"></div>
-        </div>
-      </div>
+<script>
+let socket;
+let mySide;
+let board = [];
+let currentTurn;
 
-      <div class="panel">
-        <h3>ランキング</h3>
-        <div id="rankingBody" class="rankingList">読み込み中...</div>
-      </div>
-    </div>
-  </div>
+function connect() {
+  const name = document.getElementById("name").value;
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    let socket = null;
-    let board = [];
-    let hands = null;
-    let selected = null;
-    let mySide = null;
-    let currentTurn = null;
-    let myName = "";
-    let players = null;
-    let gameEnded = false;
-    let pendingPromotion = null;
+  socket = io();
 
-    const HAND_ORDER = ["R","B","G","S","N","L","P"];
+  socket.on("connect", () => {
+    socket.emit("join", name);
+  });
 
-    const PIECE_LABELS = {
-      K: "玉",
-      R: "飛",
-      B: "角",
-      G: "金",
-      S: "銀",
-      N: "桂",
-      L: "香",
-      P: "歩",
-      PR: "龍",
-      PB: "馬",
-      PS: "全",
-      PN: "圭",
-      PL: "杏",
-      PP: "と"
-    };
+  socket.on("start", (data) => {
+    mySide = data.side;
+    document.getElementById("status").textContent =
+      "対戦開始 " + (mySide === "black" ? "先手" : "後手");
+  });
 
-    function inBounds(r, c) {
-      return r >= 0 && r < 9 && c >= 0 && c < 9;
-    }
+  socket.on("state", (data) => {
+    board = data.board;
+    currentTurn = data.turn;
+    render();
+  });
+}
 
-    function clone(obj) {
-      return JSON.parse(JSON.stringify(obj));
-    }
+function resign() {
+  socket.emit("resign");
+}
 
-    function opponent(side) {
-      return side === "black" ? "white" : "black";
-    }
+function render() {
+  const el = document.getElementById("board");
+  el.innerHTML = "";
 
-    function dir(side) {
-      return side === "black" ? -1 : 1;
-    }
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
 
-    function canPromote(type) {
-      return ["R","B","S","N","L","P"].includes(type);
-    }
-
-    function promotedType(type) {
-      return { R:"PR", B:"PB", S:"PS", N:"PN", L:"PL", P:"PP" }[type] || type;
-    }
-
-    function baseType(type) {
-      return { PR:"R", PB:"B", PS:"S", PN:"N", PL:"L", PP:"P" }[type] || type;
-    }
-
-    function isPromoted(type) {
-      return ["PR","PB","PS","PN","PL","PP"].includes(type);
-    }
-
-    function promotionZone(side, row) {
-      return side === "black" ? row <= 2 : row >= 6;
-    }
-
-    function mustPromote(type, side, toRow) {
-      const t = baseType(type);
-      if (t === "P" || t === "L") {
-        return (side === "black" && toRow === 0) || (side === "white" && toRow === 8);
-      }
-      if (t === "N") {
-        return (side === "black" && toRow <= 1) || (side === "white" && toRow >= 7);
-      }
-      return false;
-    }
-
-    function pieceDisplay(piece) {
-      if (!piece) return "";
-      return PIECE_LABELS[piece.type] || piece.type;
-    }
-
-    function getPieceRotation(owner) {
-      if (!mySide) return owner === "white" ? 180 : 0;
-      return owner === mySide ? 0 : 180;
-    }
-
-    function getPseudoMoves(r, c) {
       const piece = board[r][c];
-      if (!piece) return [];
-      const side = piece.owner;
-      const d = dir(side);
-      const moves = [];
-
-      function pushStep(dr, dc) {
-        const nr = r + dr;
-        const nc = c + dc;
-        if (!inBounds(nr, nc)) return;
-        const target = board[nr][nc];
-        if (!target || target.owner !== side) {
-          moves.push({ r: nr, c: nc });
-        }
+      if (piece) {
+        const p = document.createElement("div");
+        p.textContent = piece.type;
+        p.className = "piece " + (piece.owner === "white" ? "white" : "");
+        cell.appendChild(p);
       }
 
-      function pushSlide(dr, dc) {
-        let nr = r + dr;
-        let nc = c + dc;
-        while (inBounds(nr, nc)) {
-          const target = board[nr][nc];
-          if (!target) {
-            moves.push({ r: nr, c: nc });
-          } else {
-            if (target.owner !== side) moves.push({ r: nr, c: nc });
-            break;
-          }
-          nr += dr;
-          nc += dc;
-        }
-      }
-
-      switch (piece.type) {
-        case "K":
-          [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc]) => pushStep(dr,dc));
-          break;
-        case "G":
-        case "PS":
-        case "PN":
-        case "PL":
-        case "PP":
-          [[d,-1],[d,0],[d,1],[0,-1],[0,1],[-d,0]].forEach(([dr,dc]) => pushStep(dr,dc));
-          break;
-        case "S":
-          [[d,-1],[d,0],[d,1],[-d,-1],[-d,1]].forEach(([dr,dc]) => pushStep(dr,dc));
-          break;
-        case "N":
-          [[2*d,-1],[2*d,1]].forEach(([dr,dc]) => pushStep(dr,dc));
-          break;
-        case "L":
-          pushSlide(d,0);
-          break;
-        case "P":
-          pushStep(d,0);
-          break;
-        case "R":
-          [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc]) => pushSlide(dr,dc));
-          break;
-        case "B":
-          [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc]) => pushSlide(dr,dc));
-          break;
-        case "PR":
-          [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc]) => pushSlide(dr,dc));
-          [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc]) => pushStep(dr,dc));
-          break;
-        case "PB":
-          [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc]) => pushSlide(dr,dc));
-          [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc]) => pushStep(dr,dc));
-          break;
-      }
-
-      return moves;
-    }
-
-    function getPseudoMovesOnBoard(customBoard, r, c) {
-      const save = board;
-      board = customBoard;
-      const result = getPseudoMoves(r, c);
-      board = save;
-      return result;
-    }
-
-    function findKing(side, customBoard = board) {
-      for (let r = 0; r < 9; r++) {
-        for (let c = 0; c < 9; c++) {
-          const p = customBoard[r][c];
-          if (p && p.owner === side && p.type === "K") return { r, c };
-        }
-      }
-      return null;
-    }
-
-    function isCheck(side, customBoard = board) {
-      const king = findKing(side, customBoard);
-      if (!king) return true;
-
-      for (let r = 0; r < 9; r++) {
-        for (let c = 0; c < 9; c++) {
-          const p = customBoard[r][c];
-          if (!p || p.owner !== opponent(side)) continue;
-          const moves = getPseudoMovesOnBoard(customBoard, r, c);
-          if (moves.some(m => m.r === king.r && m.c === king.c)) return true;
-        }
-      }
-      return false;
-    }
-
-    function applyMoveLocal(customBoard, customHands, from, to, promoteFlag) {
-      const nextBoard = clone(customBoard);
-      const nextHands = clone(customHands);
-      const piece = nextBoard[from.r][from.c];
-      if (!piece) return null;
-
-      const target = nextBoard[to.r][to.c];
-      if (target) {
-        const captured = baseType(target.type);
-        if (captured !== "K") nextHands[piece.owner][captured] += 1;
-      }
-
-      nextBoard[from.r][from.c] = null;
-      nextBoard[to.r][to.c] = {
-        type: promoteFlag ? promotedType(piece.type) : piece.type,
-        owner: piece.owner
+      cell.onclick = () => {
+        socket.emit("move", { r, c });
       };
 
-      return { board: nextBoard, hands: nextHands };
+      el.appendChild(cell);
     }
-
-    function legalBoardMoves(r, c) {
-      const piece = board[r][c];
-      if (!piece) return [];
-
-      const pseudo = getPseudoMoves(r, c);
-      const legal = [];
-
-      for (const move of pseudo) {
-        const must = mustPromote(piece.type, piece.owner, move.r);
-        const can =
-          canPromote(piece.type) &&
-          !isPromoted(piece.type) &&
-          (promotionZone(piece.owner, r) || promotionZone(piece.owner, move.r));
-
-        const choices = must ? [true] : can ? [false, true] : [false];
-
-        for (const promoteFlag of choices) {
-          const applied = applyMoveLocal(board, hands, { r, c }, move, promoteFlag);
-          if (!applied) continue;
-          if (!isCheck(piece.owner, applied.board)) {
-            legal.push({
-              from: { r, c },
-              to: move,
-              promote: promoteFlag
-            });
-          }
-        }
-      }
-
-      return legal;
-    }
-
-    function hasPawnInFile(side, col) {
-      for (let r = 0; r < 9; r++) {
-        const p = board[r][col];
-        if (p && p.owner === side && p.type === "P") return true;
-      }
-      return false;
-    }
-
-    function legalDrops(side, type) {
-      const moves = [];
-      if (!hands || hands[side][type] <= 0) return moves;
-
-      for (let r = 0; r < 9; r++) {
-        for (let c = 0; c < 9; c++) {
-          if (board[r][c]) continue;
-
-          if (type === "P") {
-            if ((side === "black" && r === 0) || (side === "white" && r === 8)) continue;
-            if (hasPawnInFile(side, c)) continue;
-          }
-          if (type === "L") {
-            if ((side === "black" && r === 0) || (side === "white" && r === 8)) continue;
-          }
-          if (type === "N") {
-            if ((side === "black" && r <= 1) || (side === "white" && r >= 7)) continue;
-          }
-
-          const nextBoard = clone(board);
-          const nextHands = clone(hands);
-          nextBoard[r][c] = { type, owner: side };
-          nextHands[side][type] -= 1;
-
-          if (!isCheck(side, nextBoard)) moves.push({ to: { r, c }, piece: type });
-        }
-      }
-
-      return moves;
-    }
-
-    function viewToBoard(vr, vc) {
-      if (mySide === "white") return { r: 8 - vr, c: 8 - vc };
-      return { r: vr, c: vc };
-    }
-
-    function getCurrentLegalMap() {
-      if (selected && selected.kind === "board") return legalBoardMoves(selected.r, selected.c);
-      if (selected && selected.kind === "hand") return legalDrops(mySide, selected.piece);
-      return [];
-    }
-
-    function clearSelection() {
-      selected = null;
-      hidePromotionBar();
-    }
-
-    function connect() {
-      const name = document.getElementById("name").value.trim();
-      if (!name) {
-        alert("名前を入れてください");
-        return;
-      }
-
-      myName = name;
-
-      if (socket) socket.disconnect();
-      socket = io();
-
-      socket.on("connect", () => {
-        socket.emit("join", name);
-      });
-
-      socket.on("waiting", () => {
-        document.getElementById("status").textContent = "マッチング待機中...";
-      });
-
-      socket.on("start", (data) => {
-        mySide = data.side;
-        gameEnded = false;
-        clearSelection();
-        document.getElementById("status").textContent =
-          `対戦開始 / あなたは ${mySide === "black" ? "先手" : "後手"}`;
-      });
-
-      socket.on("state", (data) => {
-        board = data.board;
-        hands = data.hands;
-        currentTurn = data.turn;
-        players = data.players;
-        clearSelection();
-        render();
-      });
-
-      socket.on("gameOver", (data) => {
-        gameEnded = true;
-        hidePromotionBar();
-
-        const myRating = mySide === "black" ? data.ratings.black : data.ratings.white;
-        let msg = "";
-        if (data.reason === "checkmate") {
-          msg = data.winner === mySide ? "あなたの勝ち（詰み）" : "あなたの負け（詰み）";
-        } else {
-          msg = data.winner === mySide ? "あなたの勝ち（投了）" : "あなたの負け（投了）";
-        }
-
-        document.getElementById("status").textContent = `${msg} / 新レート: ${myRating}`;
-        loadRanking();
-        render();
-      });
-
-      socket.on("opponentLeft", () => {
-        document.getElementById("status").textContent = "相手が退出しました";
-      });
-
-      loadRanking();
-    }
-
-    function resign() {
-      if (!socket || gameEnded) return;
-      socket.emit("resign");
-    }
-
-    function showPromotionBar(from, to, candidates) {
-      pendingPromotion = { from, to, candidates };
-      document.getElementById("promoBar").style.display = "flex";
-    }
-
-    function hidePromotionBar() {
-      pendingPromotion = null;
-      document.getElementById("promoBar").style.display = "none";
-    }
-
-    function choosePromotion(flag) {
-      if (!pendingPromotion) return;
-      const found = pendingPromotion.candidates.find(x => x.promote === flag);
-      if (!found) return;
-
-      socket.emit("move", {
-        kind: "move",
-        from: pendingPromotion.from,
-        to: pendingPromotion.to,
-        promote: found.promote
-      });
-
-      clearSelection();
-      render();
-    }
-
-    function executeBoardClick(r, c) {
-      if (!socket || !board.length || !hands) return;
-      if (gameEnded) return;
-      if (currentTurn !== mySide) return;
-
-      const clicked = board[r][c];
-
-      if (selected && selected.kind === "board") {
-        const legal = legalBoardMoves(selected.r, selected.c);
-        const candidates = legal.filter(m => m.to.r === r && m.to.c === c);
-
-        if (candidates.length === 0) {
-          hidePromotionBar();
-          if (clicked && clicked.owner === mySide) {
-            selected = { kind: "board", r, c };
-            render();
-          } else {
-            clearSelection();
-            render();
-          }
-          return;
-        }
-
-        if (candidates.length === 2) {
-          showPromotionBar({ r: selected.r, c: selected.c }, { r, c }, candidates);
-          return;
-        }
-
-        socket.emit("move", {
-          kind: "move",
-          from: { r: selected.r, c: selected.c },
-          to: { r, c },
-          promote: candidates[0].promote
-        });
-
-        clearSelection();
-        render();
-        return;
-      }
-
-      if (selected && selected.kind === "hand") {
-        const legal = legalDrops(mySide, selected.piece);
-        const found = legal.find(m => m.to.r === r && m.to.c === c);
-        if (!found) {
-          clearSelection();
-          render();
-          return;
-        }
-
-        socket.emit("move", {
-          kind: "drop",
-          piece: selected.piece,
-          to: { r, c }
-        });
-
-        clearSelection();
-        render();
-        return;
-      }
-
-      if (clicked && clicked.owner === mySide) {
-        hidePromotionBar();
-        selected = { kind: "board", r, c };
-        render();
-      }
-    }
-
-    function handleCellClick(vr, vc) {
-      const { r, c } = viewToBoard(vr, vc);
-      executeBoardClick(r, c);
-      render();
-    }
-
-    function handleHandClick(side, piece) {
-      if (gameEnded) return;
-      if (currentTurn !== mySide) return;
-      if (side !== mySide) return;
-      if (!hands || hands[side][piece] <= 0) return;
-
-      hidePromotionBar();
-      selected = { kind: "hand", piece };
-      render();
-    }
-
-    function renderHands() {
-      const topHand = document.getElementById("topHand");
-      const bottomHand = document.getElementById("bottomHand");
-      topHand.innerHTML = "";
-      bottomHand.innerHTML = "";
-
-      if (!hands || !mySide) return;
-
-      const topSide = opponent(mySide);
-      const bottomSide = mySide;
-
-      document.getElementById("topHandTitle").textContent =
-        `${topSide === "black" ? "先手" : "後手"}の持ち駒`;
-      document.getElementById("bottomHandTitle").textContent =
-        `${bottomSide === "black" ? "先手" : "後手"}の持ち駒`;
-
-      for (const [side, target] of [[topSide, topHand], [bottomSide, bottomHand]]) {
-        for (const p of HAND_ORDER) {
-          const count = hands[side][p];
-          if (count <= 0) continue;
-
-          const div = document.createElement("div");
-          div.className = "handPiece";
-          if (selected && selected.kind === "hand" && selected.piece === p && side === mySide) {
-            div.classList.add("selected");
-          }
-          div.textContent = `${PIECE_LABELS[p]}×${count}`;
-          div.onclick = () => handleHandClick(side, p);
-          target.appendChild(div);
-        }
-      }
-    }
-
-    function render() {
-      const el = document.getElementById("board");
-      el.innerHTML = "";
-
-      const legalMap = getCurrentLegalMap();
-
-      for (let vr = 0; vr < 9; vr++) {
-        for (let vc = 0; vc < 9; vc++) {
-          const { r, c } = viewToBoard(vr, vc);
-          const div = document.createElement("div");
-          div.className = "cell";
-
-          if (selected && selected.kind === "board" && selected.r === r && selected.c === c) {
-            div.classList.add("selected");
-          }
-          if (legalMap.some(m => m.to.r === r && m.to.c === c)) {
-            div.classList.add("legal");
-          }
-
-          const p = board[r][c];
-          if (p) {
-            const pieceDiv = document.createElement("div");
-            pieceDiv.className = "piece";
-            if (isPromoted(p.type)) pieceDiv.classList.add("promoted");
-            if (selected && selected.kind === "board" && selected.r === r && selected.c === c) {
-              pieceDiv.classList.add("selected");
-            }
-            pieceDiv.style.setProperty("--piece-rotation", `${getPieceRotation(p.owner)}deg`);
-            pieceDiv.style.transform = `rotate(${getPieceRotation(p.owner)}deg)`;
-            pieceDiv.textContent = pieceDisplay(p);
-            div.appendChild(pieceDiv);
-          }
-
-          div.onclick = () => handleCellClick(vr, vc);
-          el.appendChild(div);
-        }
-      }
-
-      renderHands();
-      renderInfo();
-    }
-
-    function renderInfo() {
-      const myRating = mySide && players ? players[mySide].rating : "-";
-      const opSide = mySide ? opponent(mySide) : null;
-      const opName = opSide && players ? players[opSide].name : "-";
-      const opRating = opSide && players ? players[opSide].rating : "-";
-
-      document.getElementById("myInfo").innerHTML =
-        `自分: ${myName} ${currentTurn === mySide ? "<span class='turnDot'>●</span>" : ""}`;
-      document.getElementById("myRating").textContent = `レート: ${myRating}`;
-
-      document.getElementById("opInfo").innerHTML =
-        `相手: ${opName} ${currentTurn && opSide === currentTurn ? "<span class='turnDot'>●</span>" : ""}`;
-      document.getElementById("opRating").textContent = `相手レート: ${opRating}`;
-
-      document.getElementById("turnInfo").textContent =
-        `手番: ${currentTurn === "black" ? "先手" : currentTurn === "white" ? "後手" : "-"}`;
-    }
-
-    async function loadRanking() {
-      try {
-        const res = await fetch("/api/ranking");
-        const data = await res.json();
-        const body = data.slice(0, 20).map((u, i) => `
-          <div class="rankRow">
-            <div>${i + 1}</div>
-            <div>${u.name}</div>
-            <div>${u.rating}</div>
-            <div>${u.games}局</div>
-          </div>
-        `).join("");
-        document.getElementById("rankingBody").innerHTML = body || "まだデータなし";
-      } catch {
-        document.getElementById("rankingBody").textContent = "ランキング取得失敗";
-      }
-    }
-
-    loadRanking();
-  
-  
-  </script>
-  <script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/service-worker.js")
-        .then(() => {
-          console.log("service worker registered");
-        })
-        .catch((err) => {
-          console.error("service worker register failed", err);
-        });
-    });
   }
+}
 </script>
+
+<!-- Service Worker登録 -->
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js")
+      .then(() => console.log("SW registered"))
+      .catch(err => console.log("SW error", err));
+  });
+}
+</script>
+
 </body>
 </html>
